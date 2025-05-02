@@ -1,4 +1,6 @@
-class LastPacket:
+from packet import Packet
+
+class LastPacket(Packet):
     def __init__(self, transmission_id: int, sequence_number: int, md5: str) -> None:
         self.transmission_id = transmission_id
         self.sequence_number = sequence_number
