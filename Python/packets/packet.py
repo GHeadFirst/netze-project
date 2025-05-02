@@ -5,11 +5,9 @@ class Packet(ABC):
         self.transmission_id = transmission_id
         self.sequence_number = sequence_number
 
-    @abstractmethod
     def get_transmission_id(self) -> int:
-        pass # pass means there is no implementation here cause --> abstract
-    
-    @abstractmethod
+        return self.get_transmission_id
+
     def get_sequence_number(self) -> int:
-        pass
+        return self.get_sequence_number
 
