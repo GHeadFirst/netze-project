@@ -1,3 +1,4 @@
+import struct
 from packet import Packet
 
 class DataPacket(Packet):
@@ -6,6 +7,13 @@ class DataPacket(Packet):
         self.data = data
 
 
+    def serialisieren(self) -> bytes:
+        header = struct.pack("!HI", self.transmission_id, self.sequence_number)
+        return header + self.data
+    
+    #def deserialisieren(data: bytes):
+    
+    
     def get_data(self) -> bytes:
         return self.data
     
