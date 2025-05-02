@@ -1,0 +1,12 @@
+This is our test data to see if we get the same contents, we should get only utf-8 content since this is our Assumption
+
+
+Lorem ipsum dolor sit amet consectetur adipiscing elit. Consectetur adipiscing elit quisque faucibus ex sapien vitae. Ex sapien vitae pellentesque sem placerat in id. Placerat in id cursus mi pretium tellus duis. Pretium tellus duis convallis tempus leo eu aenean.
+
+
+1231312313 
+testing numbers:
+1212
+
+Testing other languages
+أنا البندورة الحمرا
