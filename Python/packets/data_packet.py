@@ -2,8 +2,7 @@ from packet import Packet
 
 class DataPacket(Packet):
     def __init__(self, transmission_id: int, sequence_number: int, data: bytes) -> None: 
-        self.transmission_id = transmission_id
-        self.sequence_number = sequence_number
+        super.__init__(transmission_id, sequence_number)
         self.data = data
 
     def get_transmission_id(self) -> int:
