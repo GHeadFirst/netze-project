@@ -14,9 +14,3 @@ class FirstPacket:
 
     def get_file_name(self) -> str:
             return self.get_file_name
-    
-    a
-    
-    a
-    
-    a
