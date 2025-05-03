@@ -84,7 +84,7 @@ func Transmission(filename string) {
 	}
 	last := udp_packets.Last_packet{
 		Head: lasthead,
-		MD5:  md5[:], // [:] means converting an array to a slice
+		MD5:  md5,
 	}
 	packet_list = append(packet_list, &last)
 

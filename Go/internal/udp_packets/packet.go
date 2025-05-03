@@ -22,7 +22,7 @@ type Data_packet struct {
 
 type Last_packet struct {
 	Head Header
-	MD5  string
+	MD5  [16]byte
 }
 
 // "marker interface" just to group
