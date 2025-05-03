@@ -1,17 +1,30 @@
 package net
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
 
-func receive() (int, string, int, float32) {
+func Receive() {
 
-	conn, err := net.Dial("udp", "127.0.0.1:4010")
+	addr, err := net.ResolveUDPAddr("udp", ":4010")
 	if err != nil {
-		log.Fatal("Pennercode endet hier!")
+		log.Fatal("Pennercode ist scheiße")
 	}
 
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		log.Fatal("Session terminated your code is ASS!")
+	}
 	defer conn.Close()
 
+	buf := make([]byte, 1024)
+	for {
+		n, _, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			log.Fatal("Fehler beim Lesen:", err)
+		}
+		fmt.Print(string(buf[6:n]))
+	}
 }
