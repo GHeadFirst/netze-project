@@ -1,11 +1,10 @@
 package main
 
-import(
-	"fmt"
-
-	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
+import (
+	"github.com/GHeadFirst/netze-project/Go/internal/net"
 )
 
 func main() {
-	fmt.println("Hello")
+	// send data
+	net.Transmission("test_data_go.txt")
 }
