@@ -4,9 +4,9 @@ from packet import Packet
 class LastPacket(Packet):
     def __init__(self, transmission_id: int, sequence_number: int, md5: bytes) -> None:
         super().__init__(transmission_id, sequence_number)
-        if (md5 != 16):
+        if len(md5) != 16:
             raise ValueError("falsche Größe von MD5!")
-        self.md5 = md5(16)
+        self.md5 = md5
 
     def serialization(self) -> bytes:
         packet = struct.pack('!HII', self.transmission_id, self.sequence_number)
@@ -23,5 +23,5 @@ class LastPacket(Packet):
         return cls(transmission_id,sequence_number,md5)
 
     def __str__(self):
-        return super().__str__() + f"Packet MD5: {self.md5} \nPacket MD5 Decoded (UTF-8): {self.md5.decode("UTF-8")}\n" 
+        return super().__str__() + f"Packet MD5: {self.md5} \nPacket MD5 Decoded (UTF-8): {self.md5.decode('UTF-8')}\n" 
  
