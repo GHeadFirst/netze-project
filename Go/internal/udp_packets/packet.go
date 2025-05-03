@@ -6,12 +6,12 @@ type Packet interface {
 
 type Header struct {
 	Transmission_id string
-	Sequence_number int
+	Sequence_number uint32
 }
 
 type First_packet struct {
 	Head                Header
-	Max_sequence_number int
+	Max_sequence_number uint32
 	File_Name           string
 }
 
