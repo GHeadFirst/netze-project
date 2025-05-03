@@ -1,13 +1,22 @@
 from abc import ABC, abstractmethod
+import struct
 
 class Packet(ABC):
     def __init__(self, transmission_id: int, sequence_number: int ) -> None: 
         self.transmission_id = transmission_id
         self.sequence_number = sequence_number
 
-    def get_transmission_id(self) -> int:
-        return self.get_transmission_id
+    @abstractmethod
+    def serialization(self):
+        pass
+    
+    @classmethod
+    @abstractmethod
+    def deserialization(cls):
+        pass # Because it is an abstract method, implement code in subclass
 
-    def get_sequence_number(self) -> int:
-        return self.get_sequence_number
+    def __str__(self):
+        return f"Packet tx_id:{self.transmission_id} \nPacket seq_nummer:{self.seq_nummer} \n"
+
+    # def __repr__(self):
 
