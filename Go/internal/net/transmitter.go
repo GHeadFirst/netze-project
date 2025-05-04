@@ -27,8 +27,6 @@ func Transmission(filename string) {
 		packet_list []udp_packets.Packet
 
 		count int = 0 // counts if theres any information left to read in the file
-
-		// packet []byte = make([]byte, packetSize)
 	)
 	fmt.Println("File: ", filename)
 	md5_byte := CalcMD5(filename)
@@ -61,9 +59,9 @@ func Transmission(filename string) {
 	// storing all data_packets into an array called packet_list
 	for {
 		sequence++
-		buffer := make([]byte, packetSize-headerSize)
+		buf := make([]byte, packetSize-headerSize)
 		// read
-		count, err = file.Read(buffer)
+		count, err = file.Read(buf)
 		if err != nil && err != io.EOF {
 			log.Fatal("Pennercode kann nicht die Datei lesen", err)
 		}
@@ -79,7 +77,7 @@ func Transmission(filename string) {
 		}
 		data_packet := udp_packets.Data_packet{
 			Head: head,
-			Data: buffer[:count],
+			Data: buf[:count], // only store the real bytes, so there is no unnecessery zero bytes in the last data packet
 		}
 		packet_list = append(packet_list, &data_packet)
 		// payload = nil
