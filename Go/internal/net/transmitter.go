@@ -19,15 +19,16 @@ func Transmission(filename string) {
 	const packetSize = 1024
 
 	var (
+		ip   string = "127.0.0.1"
+		port string = "4010"
+
+		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
 		sequence    uint32 = 0
 		packet_list []udp_packets.Packet
-		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
 
 		count int = 0 // counts if theres any information left to read in the file
 
-		packet  []byte = make([]byte, packetSize)
-		header  []byte = make([]byte, headerSize)
-		payload []byte = make([]byte, len(packet)-len(header))
+		// packet []byte = make([]byte, packetSize)
 	)
 	fmt.Println("File: ", filename)
 	md5_byte := CalcMD5(filename)
@@ -38,8 +39,8 @@ func Transmission(filename string) {
 		log.Fatal("Pennercode kann die Datei nicht öffnen!", err)
 	}
 
-	// udp
-	conn, err := net.Dial("udp", "127.0.0.1:4010")
+	// udp connection
+	conn, err := net.Dial("udp", ip+":"+port)
 	if err != nil {
 		log.Fatal("Pennercode hat nicht geschafft sich zu verbinden!", err)
 	}
@@ -60,8 +61,9 @@ func Transmission(filename string) {
 	// storing all data_packets into an array called packet_list
 	for {
 		sequence++
+		buffer := make([]byte, packetSize-headerSize)
 		// read
-		count, err = file.Read(payload)
+		count, err = file.Read(buffer)
 		if err != nil && err != io.EOF {
 			log.Fatal("Pennercode kann nicht die Datei lesen", err)
 		}
@@ -69,17 +71,15 @@ func Transmission(filename string) {
 		if count == 0 {
 			break
 		}
+
 		// everytime a new header with a new sequencenumber but same id
 		head := udp_packets.Header{
 			Transmission_id: id,
 			Sequence_number: sequence,
 		}
-		penner := make([]byte, count)
-		copy(penner, payload[:count])
-
 		data_packet := udp_packets.Data_packet{
 			Head: head,
-			Data: penner,
+			Data: buffer[:count],
 		}
 		packet_list = append(packet_list, &data_packet)
 		// payload = nil
@@ -101,63 +101,61 @@ func Transmission(filename string) {
 	fixup_sequence.Max_sequence_number = sequence - 1
 
 	// sending part
-	for _, x := range packet_list {
-		header = nil
-		payload = nil
-		packet = nil
-
-		switch pkt := x.(type) {
-
-		case *udp_packets.First_packet:
-			var transmission_byte [2]byte
-			var sequence_byte [4]byte
-			var max_sequence_byte [32]byte
-			var file_name_byte [256]byte
-
-			binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
-			binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
-			binary.BigEndian.PutUint32(max_sequence_byte[:], pkt.Max_sequence_number)
-			copy(file_name_byte[:], []byte(pkt.File_Name))
-
-			header = append(header, transmission_byte[:]...)
-			header = append(header, sequence_byte[:]...)
-			payload = append(payload, max_sequence_byte[:]...)
-			payload = append(payload, file_name_byte[:]...)
-			packet = append(packet, header...)
-			packet = append(packet, payload...)
-
-		case *udp_packets.Data_packet:
-			var transmission_byte [2]byte
-			var sequence_byte [4]byte
-			// data is already in bytes
-
-			binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
-			binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
-
-			header = append(header, transmission_byte[:]...)
-			header = append(header, sequence_byte[:]...)
-			payload = append(payload, pkt.Data...)
-			packet = append(packet, header...)
-			packet = append(packet, payload...)
-
-		case *udp_packets.Last_packet:
-			var transmission_byte [2]byte
-			var sequence_byte [4]byte
-			//md5 is already in [16]byte
-
-			binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
-			binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
-
-			header = append(header, transmission_byte[:]...)
-			header = append(header, sequence_byte[:]...)
-			payload = append(payload, md5_byte[:]...)
-			packet = append(packet, header...)
-			packet = append(packet, payload...)
-		}
+	for _, pkt := range packet_list {
+		packet := BuildPacket(pkt, md5_byte)
 		_, err := conn.Write(packet)
 		if err != nil {
 			log.Fatal("Pennercode hat es nicht geschafft das packet zu senden!", err)
 		}
 		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send due to packetqueue
 	}
+}
+
+func BuildPacket(x udp_packets.Packet, md5_byte [16]byte) []byte {
+	var packet []byte
+
+	switch pkt := x.(type) {
+
+	case *udp_packets.First_packet:
+		var transmission_byte [2]byte
+		var sequence_byte [4]byte
+		var max_sequence_byte [32]byte
+		var file_name_byte [256]byte
+
+		binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
+		binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
+		binary.BigEndian.PutUint32(max_sequence_byte[:], pkt.Max_sequence_number)
+		copy(file_name_byte[:], []byte(pkt.File_Name))
+
+		packet = append(packet, transmission_byte[:]...)
+		packet = append(packet, sequence_byte[:]...)
+		packet = append(packet, max_sequence_byte[:]...)
+		packet = append(packet, file_name_byte[:]...)
+
+	case *udp_packets.Data_packet:
+		var transmission_byte [2]byte
+		var sequence_byte [4]byte
+		// data is already in bytes
+
+		binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
+		binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
+
+		packet = append(packet, transmission_byte[:]...)
+		packet = append(packet, sequence_byte[:]...)
+		packet = append(packet, pkt.Data...)
+
+	case *udp_packets.Last_packet:
+		var transmission_byte [2]byte
+		var sequence_byte [4]byte
+		//md5 is already in [16]byte
+
+		binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))
+		binary.BigEndian.PutUint32(sequence_byte[:], pkt.Head.Sequence_number)
+
+		packet = append(packet, transmission_byte[:]...)
+		packet = append(packet, sequence_byte[:]...)
+		packet = append(packet, md5_byte[:]...)
+	}
+
+	return packet
 }

@@ -12,6 +12,6 @@ func main() {
 	// enough time so the receiver can start
 	time.Sleep(100 * time.Millisecond)
 	// send data
-	// net.Transmission("picture.jpg")
-	net.Transmission("test_data_go.txt")
+	net.Transmission("picture.jpg")
+	// net.Transmission("test_data_go.txt")
 }

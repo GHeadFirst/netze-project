@@ -13,14 +13,17 @@ import (
 
 func Receive() {
 	var (
+		port string = "4010"
+
 		file_name    string
 		max_sequence uint32
 		md5_old      []byte
 		packet_list  = make(map[uint32]udp_packets.Packet) // map because received packets could be unsorted
-		break_loop   bool
+
+		break_loop bool
 	)
 
-	addr, err := net.ResolveUDPAddr("udp", ":4010")
+	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 	if err != nil {
 		log.Fatal("Pennercode ist scheiße")
 	}
