@@ -1,7 +1,104 @@
 import socket
-import os
+from packets import *
+import math
+from pathlib import Path
+from hashlib import md5
+
+# file_name = test_data.txt
+
+project_root = Path(__file__).resolve().parent.parent
+
+transmission_id = 0
+max_sequence_number = None
 
 
-# Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
-# Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
+
+class FileReader():
+
+    def __init__(self,file_name) -> None:
+        file_to_read = project_root / file_name
+        self.file = file_to_read
+        self.file_name = file_to_read.name
+        try:
+            file_size = file_to_read.stat().st_size
+            self.file_size = file_size
+            with file_to_read.open("rb") as f:
+                contents = f.read()
+                self.contents = contents
+                self.md5_hash = md5(self.contents).hexdigest() 
+            
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File {file_name} not found.")
+
+    def get_chunk(self,offset,amount_of_bytes) -> bytes:
+        if offset >= self.file_size:
+            raise ValueError(f"Offset {offset} exceeds file size {self.file_size}")
+
+        if amount_of_bytes <= 0:
+           raise ValueError("amount_of_bytes must be positive")
+
+        chunk_of_data = self.contents[offset: offset + amount_of_bytes]
+        return chunk_of_data
+    
+    def get_total_chunks(self,buffer_size) -> int:
+        return math.ceil(self.file_size / buffer_size)
+
+
+class PacketBuilder():
+    def __init__(self,file_name,buffer_size) -> None:
+        # Our class Variables
+        self.sequence_number = 0
+
+        file = FileReader(file_name)
+        self.file = file
+        self.buffer_size = buffer_size
+        self.first_packet = None
+        self.data_packets = []
+        self.last_packet = None
+
+    def create_first_packet(self) -> FirstPacket:
+        int: max_sequence_number = self.file.get_total_chunks(self.buffer_size)
+        self.first_packet = FirstPacket(transmission_id,sequence_number,file.get_total_chunks(buffer_size),file.file_name)
+        self.sequence_number += 1
+
+    def create_data_packet(self) -> DataPacket:
+        max_amount_of_packets = file.get_total_chunks(self.buffer_size)
+        offset = 0
+        current_packet = 0
+        while (current_packet < max_amount_of_packets):
+            chunk = file.get_chunk(offset,self.buffer_size)
+            offset += self.buffer_size
+            new_data_packet = DataPacket(transmission_id,self.sequence_number,chunk)
+            self.sequence_number += 1
+            self.data_packets.append(new_data_packet)
+
+
+    def create_last_packet(self) -> LastPacket:
+        self.last_packet = LastPacket(transmission_id,self.sequence_number,self.file.md5_hash) 
+
+
+
+
+
+
+    
+    
+
+class Transmitter:
+
+    # Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
+    # Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
+
+    udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    ip_address = "127.0.0.1"
+
+    port = 4010
+
+
+
+    target_address = (ip_address,port)
+
+    print("UDP socket created and bound.")
+
 
