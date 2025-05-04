@@ -44,6 +44,7 @@ func Receive() {
 			Transmission_id: id,
 			Sequence_number: sequence,
 		}
+		fmt.Println("---------------------------")
 		fmt.Println("Sequence_ID: ", id)
 		fmt.Println("Sequence_number: ", sequence)
 
@@ -80,11 +81,11 @@ func Receive() {
 			packet_list[sequence] = &data
 			fmt.Println("Data packet received!")
 		}
-		fmt.Println("---------------------------")
 		if break_loop {
 			break
 		}
 	}
+	fmt.Println("---------------------------")
 	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
 	fmt.Printf("\nReceived file: %s\n", new_file_name)
 
@@ -104,7 +105,13 @@ func Receive() {
 		n++
 	}
 
+	// comparing md5
 	md5_new := CalcMD5(new_file_name)
+	md5_old_string := fmt.Sprintf("%x", md5_old)
+	md5_new_string := fmt.Sprintf("%x", md5_new)
+	fmt.Println("MD5 before: ", md5_new_string)
+	fmt.Println("MD5 after:  ", md5_old_string)
+	fmt.Println("---------------------------------------------")
 	if bytes.Equal(md5_old, md5_new[:]) {
 		println("Same MD5!")
 	} else {
