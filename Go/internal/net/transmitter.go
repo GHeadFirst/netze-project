@@ -1,7 +1,6 @@
 package net
 
 import (
-	"crypto/md5"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -17,7 +16,7 @@ import (
 func Transmission(filename string) {
 
 	const headerSize = 6
-	const packetSize = 600
+	const packetSize = 1024
 
 	var (
 		sequence    uint32 = 0
@@ -30,7 +29,7 @@ func Transmission(filename string) {
 		header  []byte = make([]byte, headerSize)
 		payload []byte = make([]byte, len(packet)-len(header))
 	)
-	// MD5 berechnen
+	fmt.Println("File: ", filename)
 	md5_byte := CalcMD5(filename)
 
 	//open
@@ -70,7 +69,6 @@ func Transmission(filename string) {
 		if count == 0 {
 			break
 		}
-		fmt.Println("payload len:", len(payload))
 		// everytime a new header with a new sequencenumber but same id
 		head := udp_packets.Header{
 			Transmission_id: id,
@@ -160,12 +158,6 @@ func Transmission(filename string) {
 		if err != nil {
 			log.Fatal("Pennercode hat es nicht geschafft das packet zu senden!", err)
 		}
-		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send
+		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send due to packetqueue
 	}
-}
-
-func CalcMD5(filename string) [16]byte {
-	file_md5, _ := os.ReadFile(filename)
-	fmt.Println("Byte-Anzahl der Datei:", len(file_md5)) // show how much bytes the file has
-	return md5.Sum(file_md5)
 }

@@ -1,10 +1,12 @@
 package net
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
 )
@@ -13,8 +15,9 @@ func Receive() {
 	var (
 		file_name    string
 		max_sequence uint32
-		payload      []byte
-		md5_re       []byte
+		md5_old      []byte
+		packet_list  = make(map[uint32]udp_packets.Packet) // map because received packets could be unsorted
+		break_loop   bool
 	)
 
 	addr, err := net.ResolveUDPAddr("udp", ":4010")
@@ -35,10 +38,6 @@ func Receive() {
 			log.Fatal("Fehler beim Lesen:", err)
 		}
 
-		if n == 0 {
-			break
-		}
-
 		id := binary.BigEndian.Uint16(buf[0:2])
 		sequence := binary.BigEndian.Uint32(buf[2:6])
 		head := udp_packets.Header{
@@ -51,28 +50,64 @@ func Receive() {
 		switch sequence {
 		case 0:
 			max_sequence = binary.BigEndian.Uint32(buf[6:10])
-			file_name = string(buf[10:n])
+			// replace all zero bytes (\x00)
+			raw := buf[10:n]
+			clean := bytes.ReplaceAll(raw, []byte{0}, []byte{})
+			file_name = string(clean)
 			first := udp_packets.First_packet{
 				Head:                head,
 				Max_sequence_number: max_sequence,
 				File_Name:           file_name,
 			}
-			fmt.Println(first)
+			packet_list[sequence] = &first
+			fmt.Println("First packet received!")
 		case max_sequence + 1:
-			md5_re = buf[6:n]
+			md5_old = buf[6:n]
 			last := udp_packets.Last_packet{
 				Head: head,
-				MD5:  [16]byte(md5_re),
+				MD5:  [16]byte(md5_old),
 			}
-			fmt.Println(last)
+			packet_list[sequence+1] = &last
+			fmt.Println("Last packet received!")
+			break_loop = true
 		default:
-			payload = buf[6:n]
+			payload := make([]byte, n-6)
+			copy(payload, buf[6:n])
 			data := udp_packets.Data_packet{
 				Head: head,
 				Data: payload,
 			}
-			fmt.Println(data)
+			packet_list[sequence] = &data
+			fmt.Println("Data packet received!")
 		}
 		fmt.Println("---------------------------")
+		if break_loop {
+			break
+		}
+	}
+	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
+	fmt.Printf("\nReceived file: %s\n", new_file_name)
+
+	// create and fill the file with all the received data packets
+	file, err := os.Create(new_file_name)
+	if err != nil {
+		log.Fatal("Pennercode kann die erhaltene Datei nicht erstellen!", err)
+	}
+	defer file.Close()
+
+	n := uint32(1)
+	for n <= max_sequence {
+		_, err = file.Write(packet_list[n].(*udp_packets.Data_packet).Data)
+		if err != nil {
+			log.Fatal("Pennercode konnte nicht in die datei schreiben", err)
+		}
+		n++
+	}
+
+	md5_new := CalcMD5(new_file_name)
+	if bytes.Equal(md5_old, md5_new[:]) {
+		println("Same MD5!")
+	} else {
+		println("Different MD5")
 	}
 }
