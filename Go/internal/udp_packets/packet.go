@@ -5,7 +5,7 @@ type Packet interface {
 }
 
 type Header struct {
-	Transmission_id string
+	Transmission_id uint16
 	Sequence_number uint32
 }
 
