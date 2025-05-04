@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -21,7 +22,7 @@ func Transmission(filename string) {
 	var (
 		sequence    uint32 = 0
 		packet_list []udp_packets.Packet
-		id          uint16 = 22566
+		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
 
 		count int = 0 // counts if theres any information left to read in the file
 
@@ -30,9 +31,7 @@ func Transmission(filename string) {
 		payload []byte = make([]byte, len(packet)-len(header))
 	)
 	// MD5 berechnen
-	file_md5, _ := os.ReadFile(filename)
-	fmt.Println("Byte-Anzahl der Datei:", len(file_md5)) // show how much bytes the file has
-	md5_byte := md5.Sum(file_md5)
+	md5_byte := CalcMD5(filename)
 
 	//open
 	file, err := os.Open(filename)
@@ -163,4 +162,10 @@ func Transmission(filename string) {
 		}
 		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send
 	}
+}
+
+func CalcMD5(filename string) [16]byte {
+	file_md5, _ := os.ReadFile(filename)
+	fmt.Println("Byte-Anzahl der Datei:", len(file_md5)) // show how much bytes the file has
+	return md5.Sum(file_md5)
 }
