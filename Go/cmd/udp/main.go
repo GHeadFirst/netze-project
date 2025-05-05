@@ -1,11 +1,15 @@
 package main
 
-import(
-	"fmt"
+import (
+	"time"
 
-	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
+	"github.com/GHeadFirst/netze-project/Go/internal/net"
 )
 
 func main() {
-	fmt.println("Hello")
+
+	go net.Receiver()
+
+	time.Sleep(10 * time.Millisecond)
+	net.Transmitter("picture.jpg")
 }
