@@ -1,5 +1,5 @@
 import struct
-from packet import Packet
+from .packet import Packet
 
 class LastPacket(Packet):
     def __init__(self, transmission_id: int, sequence_number: int, md5: bytes) -> None:
