@@ -11,7 +11,7 @@ import (
 	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
 )
 
-func Receive() {
+func Receiver() {
 	var (
 		port string = "4010"
 
@@ -19,13 +19,11 @@ func Receive() {
 		max_sequence uint32
 		md5_old      []byte
 		packet_list  = make(map[uint32]udp_packets.Packet) // map because received packets could be unsorted
-
-		break_loop bool
 	)
 
 	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 	if err != nil {
-		log.Fatal("Pennercode ist scheiße")
+		log.Fatal("Pennercode ist scheiße", err)
 	}
 
 	conn, err := net.ListenUDP("udp", addr)
@@ -34,6 +32,30 @@ func Receive() {
 	}
 	defer conn.Close()
 
+	storePackets(packet_list, &file_name, &max_sequence, &md5_old, conn)
+
+	// new name just to see a file
+	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
+	fmt.Printf("\nReceived file: %s\n", new_file_name)
+
+	mergePackets(new_file_name, max_sequence, packet_list)
+
+	// comparing md5
+	md5_new := CalcMD5(new_file_name)
+	md5_old_string := fmt.Sprintf("%x", md5_old)
+	md5_new_string := fmt.Sprintf("%x", md5_new)
+	fmt.Println("MD5 before: ", md5_new_string)
+	fmt.Println("MD5 after:  ", md5_old_string)
+	fmt.Println("---------------------------------------------")
+	if bytes.Equal(md5_old, md5_new[:]) {
+		println("Same MD5!")
+	} else {
+		println("Different MD5")
+	}
+}
+
+func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, max_sequence *uint32, md5_old *[]byte, conn *net.UDPConn) {
+	var break_loop bool
 	buf := make([]byte, 1024)
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
@@ -53,23 +75,23 @@ func Receive() {
 
 		switch sequence {
 		case 0:
-			max_sequence = binary.BigEndian.Uint32(buf[6:10])
+			*max_sequence = binary.BigEndian.Uint32(buf[6:10])
 			// replace all zero bytes (\x00)
 			raw := buf[10:n]
 			clean := bytes.ReplaceAll(raw, []byte{0}, []byte{})
-			file_name = string(clean)
+			*file_name = string(clean)
 			first := udp_packets.First_packet{
 				Head:                head,
-				Max_sequence_number: max_sequence,
-				File_Name:           file_name,
+				Max_sequence_number: *max_sequence,
+				File_Name:           *file_name,
 			}
 			packet_list[sequence] = &first
 			fmt.Println("First packet received!")
-		case max_sequence + 1:
-			md5_old = buf[6:n]
+		case *max_sequence + 1:
+			*md5_old = buf[6:n]
 			last := udp_packets.Last_packet{
 				Head: head,
-				MD5:  [16]byte(md5_old),
+				MD5:  [16]byte(*md5_old),
 			}
 			packet_list[sequence+1] = &last
 			fmt.Println("Last packet received!")
@@ -89,9 +111,9 @@ func Receive() {
 		}
 	}
 	fmt.Println("---------------------------")
-	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
-	fmt.Printf("\nReceived file: %s\n", new_file_name)
+}
 
+func mergePackets(new_file_name string, max_sequence uint32, packet_list map[uint32]udp_packets.Packet) {
 	// create and fill the file with all the received data packets
 	file, err := os.Create(new_file_name)
 	if err != nil {
@@ -106,18 +128,5 @@ func Receive() {
 			log.Fatal("Pennercode konnte nicht in die datei schreiben", err)
 		}
 		n++
-	}
-
-	// comparing md5
-	md5_new := CalcMD5(new_file_name)
-	md5_old_string := fmt.Sprintf("%x", md5_old)
-	md5_new_string := fmt.Sprintf("%x", md5_new)
-	fmt.Println("MD5 before: ", md5_new_string)
-	fmt.Println("MD5 after:  ", md5_old_string)
-	fmt.Println("---------------------------------------------")
-	if bytes.Equal(md5_old, md5_new[:]) {
-		println("Same MD5!")
-	} else {
-		println("Different MD5")
 	}
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
 )
 
-func Transmission(filename string) {
+func Transmitter(filename string) {
 
 	const headerSize = 6
 	const packetSize = 1024
@@ -21,21 +21,9 @@ func Transmission(filename string) {
 	var (
 		ip   string = "127.0.0.1"
 		port string = "4010"
-
-		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
-		sequence    uint32 = 0
-		packet_list []udp_packets.Packet
-
-		count int = 0 // counts if theres any information left to read in the file
 	)
 	fmt.Println("File: ", filename)
 	md5_byte := CalcMD5(filename)
-
-	//open
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatal("Pennercode kann die Datei nicht öffnen!", err)
-	}
 
 	// udp connection
 	conn, err := net.Dial("udp", ip+":"+port)
@@ -44,61 +32,13 @@ func Transmission(filename string) {
 	}
 	defer conn.Close()
 
-	// store first packet
-	firsthead := udp_packets.Header{
-		Transmission_id: id,
-		Sequence_number: sequence,
-	}
-	first := udp_packets.First_packet{
-		Head:                firsthead,
-		Max_sequence_number: 0, // zero at first because the max is not known yet --> fixup needed
-		File_Name:           filename,
-	}
-	packet_list = append(packet_list, &first)
-
-	// storing all data_packets into an array called packet_list
-	for {
-		sequence++
-		buf := make([]byte, packetSize-headerSize)
-		// read
-		count, err = file.Read(buf)
-		if err != nil && err != io.EOF {
-			log.Fatal("Pennercode kann nicht die Datei lesen", err)
-		}
-		// if nothing was read, break
-		if count == 0 {
-			break
-		}
-
-		// everytime a new header with a new sequencenumber but same id
-		head := udp_packets.Header{
-			Transmission_id: id,
-			Sequence_number: sequence,
-		}
-		data_packet := udp_packets.Data_packet{
-			Head: head,
-			Data: buf[:count], // only store the real bytes, so there is no unnecessery zero bytes in the last data packet
-		}
-		packet_list = append(packet_list, &data_packet)
-		// payload = nil
-	}
-
-	// store last packet
-	lasthead := udp_packets.Header{
-		Transmission_id: id,
-		Sequence_number: sequence,
-	}
-	last := udp_packets.Last_packet{
-		Head: lasthead,
-		MD5:  md5_byte,
-	}
-	packet_list = append(packet_list, &last)
+	packet_list, sequence := storePacketsIntoArray(filename, packetSize-headerSize, md5_byte)
 
 	// fixup the max_sequence value in the first packet
-	fixup_sequence := packet_list[0].(*udp_packets.First_packet)
-	fixup_sequence.Max_sequence_number = sequence - 1
+	packet_list[0].(*udp_packets.First_packet).Max_sequence_number = sequence - 1
 
 	// sending part
+	fmt.Println("Sending file...")
 	for _, pkt := range packet_list {
 		packet := BuildPacket(pkt, md5_byte)
 		_, err := conn.Write(packet)
@@ -156,4 +96,70 @@ func BuildPacket(x udp_packets.Packet, md5_byte [16]byte) []byte {
 	}
 
 	return packet
+}
+
+func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]udp_packets.Packet, uint32) {
+	var (
+		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
+		sequence    uint32 = 0
+		packet_list []udp_packets.Packet
+	)
+
+	//open
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal("Pennercode kann die Datei nicht öffnen!", err)
+	}
+
+	// store first packet
+	firsthead := udp_packets.Header{
+		Transmission_id: id,
+		Sequence_number: sequence,
+	}
+	first := udp_packets.First_packet{
+		Head:                firsthead,
+		Max_sequence_number: 0, // zero at first because the max is not known yet --> fixup needed
+		File_Name:           filename,
+	}
+	packet_list = append(packet_list, &first)
+
+	// storing all data_packets into an array called packet_list
+	for {
+		sequence++
+		buf := make([]byte, dataSize)
+		// read
+		count, err := file.Read(buf)
+		if err != nil && err != io.EOF {
+			log.Fatal("Pennercode kann nicht die Datei lesen", err)
+		}
+		// if nothing was read, break
+		if count == 0 {
+			break
+		}
+
+		// everytime a new header with a new sequencenumber but same id
+		head := udp_packets.Header{
+			Transmission_id: id,
+			Sequence_number: sequence,
+		}
+		data_packet := udp_packets.Data_packet{
+			Head: head,
+			Data: buf[:count], // only store the real bytes, so there is no unnecessery zero bytes in the last data packet
+		}
+		packet_list = append(packet_list, &data_packet)
+		// payload = nil
+	}
+
+	// store last packet
+	lasthead := udp_packets.Header{
+		Transmission_id: id,
+		Sequence_number: sequence,
+	}
+	last := udp_packets.Last_packet{
+		Head: lasthead,
+		MD5:  md5_byte,
+	}
+	packet_list = append(packet_list, &last)
+
+	return packet_list, sequence
 }
