@@ -57,7 +57,7 @@ func BuildPacket(x udp_packets.Packet, md5_byte [16]byte) []byte {
 	case *udp_packets.First_packet:
 		var transmission_byte [2]byte
 		var sequence_byte [4]byte
-		var max_sequence_byte [32]byte
+		var max_sequence_byte [4]byte
 		var file_name_byte [256]byte
 
 		binary.BigEndian.PutUint16(transmission_byte[:], uint16(pkt.Head.Transmission_id))

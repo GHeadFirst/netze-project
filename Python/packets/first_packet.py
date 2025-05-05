@@ -1,5 +1,5 @@
 import struct 
-from packet import Packet
+from .packet import Packet
 
 
 class FirstPacket(Packet):
