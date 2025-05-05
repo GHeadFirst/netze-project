@@ -1,30 +1,31 @@
 package udp_packets
 
-import (
-	"fmt"
-)
-
-type packet interface {
-	get_transmission_id()
-	get_sequence_number()
+type Packet interface {
+	isPacket()
 }
 
-type header struct {
-	transmission_id int
-	sequence_number int
+type Header struct {
+	Transmission_id uint16
+	Sequence_number uint32
 }
 
-type first_packet struct {
-	header packet
-	max_sequence_number int
+type First_packet struct {
+	Head                Header
+	Max_sequence_number uint32
+	File_Name           string
 }
 
-type data_packet struct {
-	header packet 
-	data byte
+type Data_packet struct {
+	Head Header
+	Data []byte
 }
 
-type last_packet struct {
-	header packet
-	md5 string
+type Last_packet struct {
+	Head Header
+	MD5  [16]byte
 }
+
+// "marker interface" just to group
+func (p First_packet) isPacket() {}
+func (p Data_packet) isPacket()  {}
+func (p Last_packet) isPacket()  {}
