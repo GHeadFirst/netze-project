@@ -57,16 +57,16 @@ class PacketBuilder():
         self.last_packet = None
 
     def create_first_packet(self) -> FirstPacket:
-        int: max_sequence_number = self.file.get_total_chunks(self.buffer_size)
-        self.first_packet = FirstPacket(transmission_id,sequence_number,file.get_total_chunks(buffer_size),file.file_name)
+        self.max_sequence_number = self.file.get_total_chunks(self.buffer_size)
+        self.first_packet = FirstPacket(transmission_id,self.sequence_number,self.file.get_total_chunks(self.buffer_size),self.file.file_name)
         self.sequence_number += 1
 
     def create_data_packet(self) -> DataPacket:
-        max_amount_of_packets = file.get_total_chunks(self.buffer_size)
+        max_amount_of_packets = self.file.get_total_chunks(self.buffer_size)
         offset = 0
         current_packet = 0
         while (current_packet < max_amount_of_packets):
-            chunk = file.get_chunk(offset,self.buffer_size)
+            chunk = self.file.get_chunk(offset,self.buffer_size)
             offset += self.buffer_size
             new_data_packet = DataPacket(transmission_id,self.sequence_number,chunk)
             self.sequence_number += 1
@@ -76,29 +76,37 @@ class PacketBuilder():
     def create_last_packet(self) -> LastPacket:
         self.last_packet = LastPacket(transmission_id,self.sequence_number,self.file.md5_hash) 
 
-
-
-
-
-
-    
-    
-
+    def get_all_packets(self) -> list:
+        self.create_first_packet()
+        self.create_data_packet()
+        self.create_last_packet()
+        return [self.first_packet] + self.data_packets + [self.last_packet]
 class Transmitter:
 
     # Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
     # Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
+    def __init__(self, target_ip_address,target_port):
+        self.udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    ip_address = "127.0.0.1"
-
-    port = 4010
-
-
-
-    target_address = (ip_address,port)
-
-    print("UDP socket created and bound.")
+        self.target_address = (target_ip_address,target_port)
+        
+        print("UDP socket created and bound.")
 
 
+    def send_packets(self,packets:list):
+        for packet in packets:
+            self.udp_client_socket.sendto(packet.serialization(),self.target_address)
+            print(f"Sending packet seq={packet.sequence_number}")
+        self.close_socket()
+
+    def close_socket(self) -> str:
+        self.udp_client_socket.close()
+        return "Socket closed"
+
+def main():
+    builder = PacketBuilder("test_data.txt", 1024)
+    tx = Transmitter("127.0.0.1", 4010)
+    tx.send_packets(builder.get_all_packets())
+
+if __name__ == "__main__":
+    main()
