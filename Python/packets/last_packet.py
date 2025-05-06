@@ -9,7 +9,7 @@ class LastPacket(Packet):
         self.md5 = md5
 
     def serialization(self) -> bytes:
-        packet = struct.pack('!HII', self.transmission_id, self.sequence_number)
+        packet = struct.pack('!HI', self.transmission_id, self.sequence_number)
         return packet + self.md5
 
     @classmethod # Class method is like a second constructor
@@ -18,7 +18,7 @@ class LastPacket(Packet):
         # Something like the following HEADER_FORMAT = "!HI"  # tx_id, seq_nr
         # HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
         # payload = data[HEADER_SIZE:]
-        HEADER_FORMAT = '!HII16s'
+        HEADER_FORMAT = '!HI16s'
         transmission_id, sequence_number, md5 = struct.unpack(HEADER_FORMAT, raw)
         return cls(transmission_id,sequence_number,md5)
 
