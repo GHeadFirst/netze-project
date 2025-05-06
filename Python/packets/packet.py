@@ -16,7 +16,7 @@ class Packet(ABC):
         pass # Because it is an abstract method, implement code in subclass
 
     def __str__(self):
-        return f"Packet tx_id:{self.transmission_id} \nPacket seq_nummer:{self.seq_nummer} \n"
+        return f"Packet tx_id:{self.transmission_id} \nPacket seq_nummer:{self.sequence_number} \n"
 
     # def __repr__(self):
 

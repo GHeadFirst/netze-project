@@ -5,13 +5,8 @@ from pathlib import Path
 from hashlib import md5
 
 # file_name = test_data.txt
-
-project_root = Path(__file__).resolve().parent.parent
-
 transmission_id = 0
 max_sequence_number = None
-
-
 
 class FileReader():
 
@@ -71,6 +66,7 @@ class PacketBuilder():
             new_data_packet = DataPacket(transmission_id,self.sequence_number,chunk)
             self.sequence_number += 1
             self.data_packets.append(new_data_packet)
+            current_packet += 1
 
 
     def create_last_packet(self) -> LastPacket:
@@ -95,7 +91,11 @@ class Transmitter:
 
     def send_packets(self,packets:list):
         for packet in packets:
-            self.udp_client_socket.sendto(packet.serialization(),self.target_address)
+            if (type(packet) == DataPacket):
+                packet = packet.serialization(self.buffer_size)
+            else:
+                packet = packet.serialization()
+            self.udp_client_socket.sendto(packet,self.target_address)
             print(f"Sending packet seq={packet.sequence_number}")
         self.close_socket()
 
@@ -109,4 +109,10 @@ def main():
     tx.send_packets(builder.get_all_packets())
 
 if __name__ == "__main__":
+
+    project_root = Path(__file__).resolve().parent.parent
+
+
+
+
     main()
