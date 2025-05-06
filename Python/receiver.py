@@ -32,20 +32,20 @@ while True:
         max_sequence_number = struct.unpack("!I", data[6:10])[0]
         file_name = data[10:266].rstrip(b"\x00").decode()
         packet_map[sequence_number] = ("first", None)
-        print(f"FirstPacket erhalten – Datei: {file_name}, max_seq: {max_sequence_number}")
+        print(f"FirstPacket received – file: {file_name}, max_seq: {max_sequence_number}")
     elif sequence_number == max_sequence_number+1:
         md5_value = data[6:22]
         packet_map[sequence_number] = ("last", md5_value)
-        print("LastPacket erhalten")
+        print("LastPacket received")
         break
     else:
         packet_map[sequence_number] = ("data", data[6:])
-        print(f"DataPacket erhalten – Seq: {sequence_number}, Größe: {len(data[6:])} Bytes")
+        print(f"DataPacket received – Seq: {sequence_number}, Size: {len(data[6:])} Bytes")
 
-print("\nSpeichere Datei...")
+print("\nSave file...")
 
 if file_name is None:
-    print("Kein Dateiname erhalten. Abbruch.")
+    print("Filename missing. Terminated.")
 else:
     with open(file_name, 'wb') as f:
         for seq in sorted(packet_map.keys()):
@@ -58,8 +58,8 @@ else:
         received_md5 = packet_map[max_sequence_number+1][1]
 
         if calculated_md5 == received_md5:
-            print("✅ Datei korrekt empfangen und MD5 stimmt überein!")
+            print("File correctly received, MD5 are same!")
         else:
-            print("❌ Datei empfangen, aber MD5 stimmt NICHT überein!")
+            print("File received, MD5 are different!")
 
 udp_server_socket.close()
