@@ -112,15 +112,8 @@ func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]
 	}
 
 	// store first packet
-	firsthead := udp_packets.Header{
-		Transmission_id: id,
-		Sequence_number: sequence,
-	}
-	first := udp_packets.First_packet{
-		Head:                firsthead,
-		Max_sequence_number: 0, // zero at first because the max is not known yet --> fixup needed
-		File_Name:           filename,
-	}
+	firsthead := create_header(id, sequence)
+	first := create_first_packet(firsthead, 0, filename) // zero at first because the max is not known yet --> fixup needed
 	packet_list = append(packet_list, &first)
 
 	// storing all data_packets into an array called packet_list
@@ -138,28 +131,31 @@ func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]
 		}
 
 		// everytime a new header with a new sequencenumber but same id
-		head := udp_packets.Header{
-			Transmission_id: id,
-			Sequence_number: sequence,
-		}
-		data_packet := udp_packets.Data_packet{
-			Head: head,
-			Data: buf[:count], // only store the real bytes, so there is no unnecessery zero bytes in the last data packet
-		}
+		head := create_header(id, sequence)
+		data_packet := create_data_packet(head, buf[:count])
 		packet_list = append(packet_list, &data_packet)
-		// payload = nil
 	}
 
 	// store last packet
-	lasthead := udp_packets.Header{
-		Transmission_id: id,
-		Sequence_number: sequence,
-	}
-	last := udp_packets.Last_packet{
-		Head: lasthead,
-		MD5:  md5_byte,
-	}
+	lasthead := create_header(id, sequence)
+	last := create_last_packet(lasthead, md5_byte)
 	packet_list = append(packet_list, &last)
 
 	return packet_list, sequence
+}
+
+func create_header(id uint16, sequence uint32) udp_packets.Header {
+	return udp_packets.Header{Transmission_id: id, Sequence_number: sequence}
+}
+
+func create_first_packet(head udp_packets.Header, max_sequence_number uint32, filename string) udp_packets.First_packet {
+	return udp_packets.First_packet{Head: head, Max_sequence_number: max_sequence_number, File_Name: filename}
+}
+
+func create_data_packet(head udp_packets.Header, buf []byte) udp_packets.Data_packet {
+	return udp_packets.Data_packet{Head: head, Data: buf}
+}
+
+func create_last_packet(head udp_packets.Header, md5_byte [16]byte) udp_packets.Last_packet {
+	return udp_packets.Last_packet{Head: head, MD5: md5_byte}
 }
