@@ -8,8 +8,8 @@ import (
 
 func main() {
 
-	go net.Receiver()
+	net.Receiver()
 
 	time.Sleep(10 * time.Millisecond)
-	net.Transmitter("picture.jpg")
+	//net.Transmitter("picture.jpg")
 }

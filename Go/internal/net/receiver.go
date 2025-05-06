@@ -23,12 +23,12 @@ func Receiver() {
 
 	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 	if err != nil {
-		log.Fatal("Pennercode ist scheiße", err)
+		log.Fatal("Error: ", err)
 	}
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Fatal("Session terminated your code is ASS!")
+		log.Fatal("Reciever Error: ", err)
 	}
 	defer conn.Close()
 
@@ -60,7 +60,7 @@ func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, 
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			log.Fatal("Fehler beim Lesen:", err)
+			log.Fatal("Fehler beim Lesen: ", err)
 		}
 
 		id := binary.BigEndian.Uint16(buf[0:2])
@@ -117,7 +117,7 @@ func mergePackets(new_file_name string, max_sequence uint32, packet_list map[uin
 	// create and fill the file with all the received data packets
 	file, err := os.Create(new_file_name)
 	if err != nil {
-		log.Fatal("Pennercode kann die erhaltene Datei nicht erstellen!", err)
+		log.Fatal("Error: ", err)
 	}
 	defer file.Close()
 
@@ -125,7 +125,7 @@ func mergePackets(new_file_name string, max_sequence uint32, packet_list map[uin
 	for n <= max_sequence {
 		_, err = file.Write(packet_list[n].(*udp_packets.Data_packet).Data)
 		if err != nil {
-			log.Fatal("Pennercode konnte nicht in die datei schreiben", err)
+			log.Fatal("Error: ", err)
 		}
 		n++
 	}
