@@ -2,28 +2,24 @@ package main
 
 import (
 	"flag"
-	"time"
 
 	"github.com/GHeadFirst/netze-project/Go/internal/net"
 )
 
 func main() {
 	var (
-		send    string
-		receive string
+		send    bool
+		receive bool
 	)
-	flag.StringVar(&send, "send", "", "Sender file")
-	flag.StringVar(&receive, "receive", "", "Receiver file")
+	flag.BoolVar(&send, "send", false, "Sender file")
+	flag.BoolVar(&receive, "receive", false, "Receiver file")
+	flag.Parse()
 
-	if send == "send" {
+	if send {
 		net.Transmitter("picture.jpg")
-
 	}
 
-	if receive == "receive" {
+	if receive {
 		net.Receiver()
 	}
-
-	time.Sleep(10 * time.Millisecond)
-	//net.Transmitter("picture.jpg")
 }
