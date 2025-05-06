@@ -28,13 +28,14 @@ func Receiver() {
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Fatal("Reciever Error: ", err)
+		log.Fatal("Receiver Error: ", err)
 	}
 	defer conn.Close()
+	fmt.Println("UDP server is listening...")
 
 	storePackets(packet_list, &file_name, &max_sequence, &md5_old, conn)
 
-	// new name just to see a file
+	// new name just to see a file, normally it wouldn't be needed
 	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
 	fmt.Printf("\nReceived file: %s\n", new_file_name)
 
@@ -50,7 +51,7 @@ func Receiver() {
 	if bytes.Equal(md5_old, md5_new[:]) {
 		println("Same MD5!")
 	} else {
-		println("Different MD5")
+		println("Different MD5!")
 	}
 }
 
@@ -60,7 +61,7 @@ func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, 
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			log.Fatal("Fehler beim Lesen: ", err)
+			log.Fatal("Error: ", err)
 		}
 
 		id := binary.BigEndian.Uint16(buf[0:2])
