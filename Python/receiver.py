@@ -1,81 +1,65 @@
 import struct
 import hashlib
-import socket # spricht mit deinem OS, und sagt Windows,Linux oder Mac, hey offnene ein Socket
+import socket
 
-from packets import Packet, FirstPacket, DataPacket, LastPacket
-
-
-local_ip= "127.0.0.1"
+local_ip = "127.0.0.1"
 local_port = 4010
-buffer_size = 1024 #  And in real-world networks (with MTU ~1500), you usually don't want to send more than about 1400 bytes per packet — or else you risk fragmentation and packet loss.
-
-
-# message to client
-msg_from_server = "Hello UDP Client\n"
-
-# Hinweis hier, socket.socket() erstellt einfach ein socket, dieses socket erlaubt uns unseren Netzwerk hinzuhören
-# wenn wir type = socket-SOCK_DGRAM als argument eingeben wir sagen hey OS, mach für uns ein UDP socket
-# und dass uns erlaubt UDP pakete zu bekommen, das erste Argument, AF_INET bedeuet benutze IPv4, 
+buffer_size = 1024
 
 udp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-
 udp_server_socket.bind((local_ip, local_port))
 
+packet_map = {}
 max_sequence_number = None
 file_name = None
-packet_map= {}
-                      
-print("UDP server up and listning")
+
+print("UDP server listening...")
 
 while True:
-    
-    # Receive data
-    print(f"Received data:")
-    data, addr = udp_server_socket.recvfrom(1024)
+    data, addr = udp_server_socket.recvfrom(buffer_size)
 
-    if (data.decode() == 'q'):
-        print("Connection closed from Receiver (UDP SERVER)")
+    # Vermeide decode() bei Binärdaten!
+    if data == b'q':
+        print("Connection closed from client.")
         break
 
-    header_format = '!HI'
-    header_size = struct.calcsize(header_format)
-    transmission_id, sequence_number = struct.unpack('!HI', data[:6])
+    # Header lesen (6 Byte)
+    if len(data) < 6:
+        continue  # Ungültiges Paket
+    transmission_id, sequence_number = struct.unpack("!HI", data[:6])
 
-    if (sequence_number == 0):
-        current_packet = FirstPacket.deserialization(data)
-        file_name = current_packet.file_name
-        max_sequence_number = current_packet.max_sequence_number
-        packet_map[sequence_number] = current_packet
-        print(f"Firstpacket erhalten - Datei: {file_name}, max_seq: {max_sequence_number}")
-    
-    elif max_sequence_number is not None and sequence_number == max_sequence_number:
-        current_packet = LastPacket.deserialization(data)
-        packet_map[sequence_number] = current_packet
-        print(f"Lastpaket erhalten !")
-
+    if sequence_number == 0:
+        max_sequence_number = struct.unpack("!I", data[6:10])[0]
+        file_name = data[10:266].rstrip(b"\x00").decode()
+        packet_map[sequence_number] = ("first", None)
+        print(f"FirstPacket erhalten – Datei: {file_name}, max_seq: {max_sequence_number}")
+    elif sequence_number == max_sequence_number+1:
+        md5_value = data[6:22]
+        packet_map[sequence_number] = ("last", md5_value)
+        print("LastPacket erhalten")
+        break
     else:
-        current_packet = DataPacket.deserialization(data)
-        packet_map[sequence_number] = current_packet
-        print(f"Datapaket erhaltne ! - Seq: {sequence_number}, Größe: {len(current_packet.data)} Bytes")        
-print ("\n Datei speichern")
+        packet_map[sequence_number] = ("data", data[6:])
+        print(f"DataPacket erhalten – Seq: {sequence_number}, Größe: {len(data[6:])} Bytes")
 
-with open(file_name, 'wb') as f:
-    for seq in sorted(packet_map.keys()):
-        pkt = packet_map[seq]
-        if isinstance(pkt, DataPacket):
-            f.write(pkt.data)
+print("\nSpeichere Datei...")
 
-with open(file_name, 'rb') as f:
-    hasher = hashlib.md5()
-    hasher.update(f.read())
+if file_name is None:
+    print("Kein Dateiname erhalten. Abbruch.")
+else:
+    with open(file_name, 'wb') as f:
+        for seq in sorted(packet_map.keys()):
+            kind, content = packet_map[seq]
+            if kind == "data":
+                f.write(content)
 
-    recieved_md5 = packet_map[max_sequence_number].md5
-    calc_md5 = hasher.digest()
-    
-    if recieved_md5 == calc_md5 :
-        print("Nachricht vollständig und korrekt übertragen !")
-    else:
-        print("Datei nicht korrekt übertragen, Vorsicht !")
+    with open(file_name, 'rb') as f:
+        calculated_md5 = hashlib.md5(f.read()).digest()
+        received_md5 = packet_map[max_sequence_number+1][1]
+
+        if calculated_md5 == received_md5:
+            print("✅ Datei korrekt empfangen und MD5 stimmt überein!")
+        else:
+            print("❌ Datei empfangen, aber MD5 stimmt NICHT überein!")
+
 udp_server_socket.close()
-
-
