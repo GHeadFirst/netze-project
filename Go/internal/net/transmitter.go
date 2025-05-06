@@ -28,7 +28,7 @@ func Transmitter(filename string) {
 	// udp connection
 	conn, err := net.Dial("udp", ip+":"+port)
 	if err != nil {
-		log.Fatal("Pennercode hat nicht geschafft sich zu verbinden!", err)
+		log.Fatal("Error: ", err)
 	}
 	defer conn.Close()
 
@@ -43,7 +43,7 @@ func Transmitter(filename string) {
 		packet := BuildPacket(pkt, md5_byte)
 		_, err := conn.Write(packet)
 		if err != nil {
-			log.Fatal("Pennercode hat es nicht geschafft das packet zu senden!", err)
+			log.Fatal("Error: ", err)
 		}
 		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send due to packetqueue
 	}
@@ -108,7 +108,7 @@ func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]
 	//open
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("Pennercode kann die Datei nicht öffnen!", err)
+		log.Fatal("Error: ", err)
 	}
 
 	// store first packet
@@ -130,7 +130,7 @@ func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]
 		// read
 		count, err := file.Read(buf)
 		if err != nil && err != io.EOF {
-			log.Fatal("Pennercode kann nicht die Datei lesen", err)
+			log.Fatal("Error: ", err)
 		}
 		// if nothing was read, break
 		if count == 0 {
