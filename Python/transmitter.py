@@ -5,6 +5,7 @@ from pathlib import Path
 from hashlib import md5
 
 # file_name = test_data.txt
+project_root = Path(__file__).resolve().parent.parent
 transmission_id = 0
 max_sequence_number = None
 
@@ -20,7 +21,7 @@ class FileReader():
             with file_to_read.open("rb") as f:
                 contents = f.read()
                 self.contents = contents
-                self.md5_hash = md5(self.contents).hexdigest() 
+                self.md5_hash = md5(self.contents).digest() 
             
         except FileNotFoundError:
             raise FileNotFoundError(f"File {file_name} not found.")
@@ -59,8 +60,8 @@ class PacketBuilder():
     def create_data_packet(self) -> DataPacket:
         max_amount_of_packets = self.file.get_total_chunks(self.buffer_size)
         offset = 0
-        current_packet = 0
-        while (current_packet < max_amount_of_packets):
+        current_packet = 1
+        while (current_packet <= max_amount_of_packets):
             chunk = self.file.get_chunk(offset,self.buffer_size)
             offset += self.buffer_size
             new_data_packet = DataPacket(transmission_id,self.sequence_number,chunk)
@@ -91,11 +92,8 @@ class Transmitter:
 
     def send_packets(self,packets:list):
         for packet in packets:
-            if (type(packet) == DataPacket):
-                packet = packet.serialization(self.buffer_size)
-            else:
-                packet = packet.serialization()
-            self.udp_client_socket.sendto(packet,self.target_address)
+            packet_in_bytes = packet.serialization()
+            self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
             print(f"Sending packet seq={packet.sequence_number}")
         self.close_socket()
 
@@ -107,12 +105,7 @@ def main():
     builder = PacketBuilder("test_data.txt", 1024)
     tx = Transmitter("127.0.0.1", 4010)
     tx.send_packets(builder.get_all_packets())
+    transmission_id += 1
 
 if __name__ == "__main__":
-
-    project_root = Path(__file__).resolve().parent.parent
-
-
-
-
     main()
