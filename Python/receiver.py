@@ -31,8 +31,11 @@ while True:
     # Check what the sequence number is equal to
     if sequence_number == 0:
         pkt = FirstPacket.deserialization(data)
+        raw_name = pkt.file_name     # whatever your packet gave you
+        # strip NULs *here*, immediately
+        clean_name = raw_name.rstrip('\x00')
+        file_name = f"received-{clean_name}"
         max_sequence_number = pkt.sequence_number
-        file_name = "received-"+ pkt.file_name 
     else:
         pkt = DataPacket.deserialization(data)
     
