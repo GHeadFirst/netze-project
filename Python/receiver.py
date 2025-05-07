@@ -5,7 +5,7 @@ from packets import *
 
 local_ip = "127.0.0.1"
 local_port = 4010
-buffer_size = 1024
+buffer_size = 5000
 
 udp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 udp_server_socket.bind((local_ip, local_port))
@@ -35,7 +35,7 @@ while True:
         # strip NULs *here*, immediately
         clean_name = raw_name.rstrip('\x00')
         file_name = f"received-{clean_name}"
-        max_sequence_number = pkt.sequence_number
+        max_sequence_number = pkt.max_sequence_number
     else:
         pkt = DataPacket.deserialization(data)
     

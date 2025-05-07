@@ -3,6 +3,8 @@ from packets import *
 import math
 from pathlib import Path
 from hashlib import md5
+import time
+
 
 # file_name = test_data.txt
 project_root = Path(__file__).resolve().parent.parent
@@ -94,7 +96,8 @@ class Transmitter:
         for packet in packets:
             packet_in_bytes = packet.serialization()
             self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
-            print(f"Sending packet seq={packet.sequence_number}")
+            print(f"Sending packet seq={packet.sequence_number} and {packet.__str__()}")
+            # time.sleep(0.01)   # pause 10 ms
         self.close_socket()
 
     def close_socket(self) -> str:
@@ -102,10 +105,10 @@ class Transmitter:
         return "Socket closed"
 
 def main():
-    builder = PacketBuilder("test_data.txt", 1024)
+    builder = PacketBuilder("picture.jpg", 1024)
     tx = Transmitter("127.0.0.1", 4010)
     tx.send_packets(builder.get_all_packets())
-    transmission_id += 1
+    # transmission_id += 1
 
 if __name__ == "__main__":
     main()

@@ -23,4 +23,4 @@ class LastPacket(Packet):
         return cls(transmission_id,sequence_number,md5)
 
     def __str__(self):
-        return super().__str__() + f"MD5 (hex): {hex_digest}\n"
+        return super().__str__() + f"MD5 (hex): {self.md5}\n"
