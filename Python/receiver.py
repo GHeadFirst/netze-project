@@ -3,7 +3,7 @@ from hashlib import md5
 import socket
 from packets import *
 
-local_ip = "127.0.0.1"
+local_ip = "0.0.0.0"
 local_port = 4010
 buffer_size = 5000
 
