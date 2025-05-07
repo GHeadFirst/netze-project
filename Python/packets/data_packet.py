@@ -23,4 +23,10 @@ class DataPacket(Packet):
         return cls(transmission_id,sequence_number,payload)
     
     def __str__(self):
-        return super().__str__() + f"Packet Data: {self.data} \nPacket Data Decoded (UTF-8): {self.data.decode()}\n" 
+        length = len(self.data)
+        # show up to first 8 bytes in hex, so you can see real content or emptiness
+        preview = self.data[:8].hex() + ("…" if length > 8 else "")
+        return (
+            super().__str__() +
+            f"DataPacket length={length} bytes, preview(hex)={preview}\n"
+        )
