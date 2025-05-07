@@ -50,7 +50,7 @@ func Receiver() {
 
 func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, max_sequence *uint32, md5_old *[]byte, conn *net.UDPConn) {
 	var break_loop bool
-	buf := make([]byte, 1024)
+	buf := make([]byte, 5000)
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
