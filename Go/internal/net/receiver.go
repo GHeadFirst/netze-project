@@ -52,9 +52,17 @@ func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, 
 	var break_loop bool
 	buf := make([]byte, 5000)
 	for {
-		n, _, err := conn.ReadFromUDP(buf)
+		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
 			log.Fatal("Error: ", err)
+		}
+
+		ackPacket := make([]byte, 6)
+		copy(ackPacket[0:2], buf[0:2]) // Transmission ID
+		copy(ackPacket[2:6], buf[2:6]) // Sequence number
+		_, err = conn.WriteToUDP(ackPacket, addr)
+		if err != nil {
+			log.Fatal("Error sending ACK: ", err)
 		}
 
 		// receive header

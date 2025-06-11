@@ -45,6 +45,15 @@ func Transmitter(filename string) {
 		if err != nil {
 			log.Fatal("Error: ", err)
 		}
+
+		conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+		buf := make([]byte, 6)  // ACK
+		_, err = conn.Read(buf) // wait
+		if err != nil {
+			fmt.Println("Timeout - no ACK received!")
+			return
+		}
+		fmt.Println("ACK received!")
 		time.Sleep(5 * time.Millisecond) // timer to avoid that some packet are not being send due to packetqueue
 	}
 }
