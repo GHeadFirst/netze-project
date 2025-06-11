@@ -1,8 +1,8 @@
 import struct
 from hashlib import md5
 import socket
-from Python import packets
-from Python.packets.packet import DataPacket, FirstPacket
+from packets import packet
+from packets.packet import DataPacket, FirstPacket, LastPacket
 from packets import *
 
 buffer_size = 5000
@@ -12,31 +12,35 @@ local_port = 4010
 
 def handle_complete_transmission(transmission_id, tx):
     print(f"\nTransmission {transmission_id} complete. Saving file...")
-    file_path = tx["file_name"]
-    
-    with open(file_path, 'wb') as f:
-        for i in range(1, tx["max_sequence_number"] + 1):
-            f.write(tx["packets"][i].data)
+    file_path = f"received-{tx['file_name']}"    
+    try:
+        with open(file_path, 'wb') as f:
+            for i in range(1, tx["max_sequence_number"] + 1):
+                if i not in tx["packets"]:
+                    print(f"Warning: Missing packet {i} in transmission {transmission_id}")
+                    continue
+                f.write(tx["packets"][i].data)
 
-    with open(file_path, 'rb') as f:
-        md5_actual = md5(f.read()).digest()
-        last_pkt_raw = tx["packets"][tx["max_sequence_number"] + 1].serialization()
-        last_pkt = LastPacket.deserialization(last_pkt_raw)
-        md5_expected = last_pkt.md5
+        with open(file_path, 'rb') as f:
+            md5_actual = md5(f.read()).digest()
+            last_pkt = tx["packets"][tx["max_sequence_number"] + 1]
+            md5_expected = last_pkt.md5
 
-    if md5_actual == md5_expected:
-        print(f"✅ [tx {transmission_id}] MD5 matched for file '{file_path}'")
-    else:
-        print(f"❌ [tx {transmission_id}] MD5 mismatch for file '{file_path}'")
+        if md5_actual == md5_expected:
+            print(f"✅ [tx {transmission_id}] MD5 matched for file '{file_path}'")
+        else:
+            print(f"❌ [tx {transmission_id}] MD5 mismatch for file '{file_path}'")
+            print(f"Expected MD5: {md5_expected.hex()}")
+            print(f"Actual MD5: {md5_actual.hex()}")
+    except Exception as e:
+        print(f"❌ [tx {transmission_id}] Unexpected error: {e}")
 
 
 def receive_loop(udp_server_socket):
     transmissions = {}
 
     while True:
-
         data, addr = udp_server_socket.recvfrom(buffer_size)
-
 
         if data == b'q':
             print("Connection closed from client.")
@@ -59,7 +63,11 @@ def receive_loop(udp_server_socket):
             pkt = FirstPacket.deserialization(data)
             tx["file_name"] = pkt.file_name
             tx["max_sequence_number"] = pkt.max_sequence_number
-
+            print(f"First packet received. Expecting {pkt.max_sequence_number + 1} total packets")
+        elif sequence_number == tx["max_sequence_number"] + 1:
+            # Last packet is at max_sequence_number + 1
+            pkt = LastPacket.deserialization(data)
+            print("Last packet received")
         else:
             pkt = DataPacket.deserialization(data)
 
@@ -69,8 +77,13 @@ def receive_loop(udp_server_socket):
             
         max_seq = tx["max_sequence_number"]
         if max_seq is not None:
-            expected = set(range(0, max_seq + 2))
-            if tx["sequence_numbers"] == expected:
+            # Check if we have all expected packets
+            expected_packets = max_seq + 2  # +2 for first and last packets
+            received_packets = len(tx["packets"])
+            print(f"Received {received_packets} of {expected_packets} packets")
+            
+            if received_packets == expected_packets:
+                print("\nAll packets received, saving file...")
                 handle_complete_transmission(transmission_id, tx)
                 del transmissions[transmission_id]
 
