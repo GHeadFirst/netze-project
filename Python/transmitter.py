@@ -43,9 +43,10 @@ class FileReader():
 
 
 class PacketBuilder():
-    def __init__(self,file_name,buffer_size) -> None:
+    def __init__(self,file_name,buffer_size,transmission_id) -> None:
         # Our class Variables
         self.sequence_number = 0
+        self.transmission_id = transmission_id
 
         file = FileReader(file_name)
         self.file = file
@@ -56,31 +57,30 @@ class PacketBuilder():
 
     def create_first_packet(self) -> FirstPacket:
         self.max_sequence_number = self.file.get_total_chunks(self.buffer_size)
-        self.first_packet = FirstPacket(transmission_id,self.sequence_number,self.file.get_total_chunks(self.buffer_size),self.file.file_name)
+        self.first_packet = FirstPacket(self.transmission_id, self.sequence_number,
+            self.max_sequence_number, self.file.file_name)
         self.sequence_number += 1
 
     def create_data_packet(self) -> DataPacket:
-        max_amount_of_packets = self.file.get_total_chunks(self.buffer_size)
-        offset = 0
-        current_packet = 1
-        while (current_packet <= max_amount_of_packets):
-            chunk = self.file.get_chunk(offset,self.buffer_size)
-            offset += self.buffer_size
-            new_data_packet = DataPacket(transmission_id,self.sequence_number,chunk)
-            self.sequence_number += 1
+        # Create data packets from 1 to max_sequence_number
+        for i in range(1, self.max_sequence_number + 1):
+            offset = (i - 1) * self.buffer_size
+            chunk = self.file.get_chunk(offset, self.buffer_size)
+            new_data_packet = DataPacket(self.transmission_id, i, chunk)
             self.data_packets.append(new_data_packet)
-            current_packet += 1
-
 
     def create_last_packet(self) -> LastPacket:
-        self.last_packet = LastPacket(transmission_id,self.sequence_number,self.file.md5_hash) 
+        # Last packet should be at max_sequence_number + 1
+        self.last_packet = LastPacket(self.transmission_id, self.max_sequence_number + 1, self.file.md5_hash) 
 
     def get_all_packets(self) -> list:
         self.create_first_packet()
         self.create_data_packet()
         self.create_last_packet()
         return [self.first_packet] + self.data_packets + [self.last_packet]
+
 class Transmitter:
+    transmission_id = 0  # Class variable to track transmission IDs
 
     # Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
     # Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
@@ -96,7 +96,7 @@ class Transmitter:
         for packet in packets:
             packet_in_bytes = packet.serialization()
             self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
-            print(f"Sending packet seq={packet.sequence_number} and {packet.__str__()}")
+            print(f"Sending packet tx_id={packet.transmission_id} seq={packet.sequence_number} and {packet.__str__()}")
             # time.sleep(0.01)   # pause 10 ms
         self.close_socket()
 
@@ -105,10 +105,13 @@ class Transmitter:
         return "Socket closed"
 
 def main():
-    builder = PacketBuilder("picture.jpg", 1024)
+    # Get current transmission ID and increment for next use
+    current_tx_id = Transmitter.transmission_id
+    Transmitter.transmission_id += 1
+    
+    builder = PacketBuilder("image.png", 1024, current_tx_id)
     tx = Transmitter("127.0.0.1", 4010)
     tx.send_packets(builder.get_all_packets())
-    # transmission_id += 1
 
 if __name__ == "__main__":
     main()
