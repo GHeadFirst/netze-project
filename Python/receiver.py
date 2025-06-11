@@ -11,7 +11,7 @@ udp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 udp_server_socket.bind((local_ip, local_port))
 
 packet_map = {}
-transmission_id = 0
+current_transmission_id = None
 max_sequence_number = None
 file_name = None
 
@@ -20,38 +20,43 @@ print("UDP server listening...")
 while True:
     data, addr = udp_server_socket.recvfrom(buffer_size)
 
-    # Vermeide decode() bei Binärdaten!
     if data == b'q':
         print("Connection closed from client.")
         break
     
-    # First we extract our sequence number, since it says what data_packekt we are dealing with
-    sequence_number = struct.unpack('!HI', data[:6])[1]
+    # Extract transmission ID and sequence number
+    transmission_id, sequence_number = struct.unpack('!HI', data[:6])
 
-    # Check what the sequence number is equal to
+    # If this is a new transmission, reset our state
+    if current_transmission_id is None or transmission_id != current_transmission_id:
+        current_transmission_id = transmission_id
+        packet_map.clear()
+        max_sequence_number = None
+        file_name = None
+        print(f"\nStarting new transmission with ID: {transmission_id}")
+
+    # Process packet based on sequence number
     if sequence_number == 0:
         pkt = FirstPacket.deserialization(data)
-        raw_name = pkt.file_name     # whatever your packet gave you
-        # strip NULs *here*, immediately
+        raw_name = pkt.file_name
         clean_name = raw_name.rstrip('\x00')
         file_name = f"received-{clean_name}"
         max_sequence_number = pkt.max_sequence_number
+        print(f"Received first packet. Expecting {max_sequence_number + 1} total packets")
+    elif sequence_number == max_sequence_number + 1:
+        pkt = LastPacket.deserialization(data)
     else:
         pkt = DataPacket.deserialization(data)
     
     packet_map[sequence_number] = pkt
+    print(f"Received packet {sequence_number} of {max_sequence_number + 1}")
 
-    if max_sequence_number is not None and sequence_number == max_sequence_number + 1:
-        transmission_id += 1
-        break
-
-print("\nSave file...")
-
-raw_last = packet_map[max_sequence_number + 1].data
-last_pkt = LastPacket(packet_map[max_sequence_number + 1].transmission_id,
-                      max_sequence_number + 1,
-                      raw_last)
-packet_map[max_sequence_number + 1] = last_pkt
+    # Check if we have all packets for this transmission
+    if max_sequence_number is not None:
+        expected_packets = max_sequence_number + 2  # +2 for first and last packets
+        if len(packet_map) == expected_packets:
+            print("\nAll packets received, saving file...")
+            break
 
 if file_name is None:
     print("Filename missing. Terminated.")
@@ -61,13 +66,13 @@ else:
             try:
                 pkt = packet_map[key]
             except KeyError:
-                print(f"missing packet {key}")
+                print(f"Missing packet {key}")
                 continue
             f.write(pkt.data)
 
     with open(file_name, 'rb') as f:
         calculated_md5 = md5(f.read()).digest()
-        received_md5 = packet_map[max_sequence_number+1].md5 # We get bytes not a hash here
+        received_md5 = packet_map[max_sequence_number+1].md5
 
         if calculated_md5 == received_md5:
             print("File correctly received, MD5 are same!")
