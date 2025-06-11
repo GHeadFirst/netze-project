@@ -1,0 +1,66 @@
+
+==================================================
+Transmission 1/10 at 2025-06-11T20:45:07+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 7.21 seconds
+Throughput: 7103.92 KB/s
+Total Packets: 51202
+ACKs Sent: 102402
+MD5 Match: true
+==================================================
+
+==================================================
+Transmission 2/10 at 2025-06-11T20:45:16+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 9.17 seconds
+Throughput: 5581.89 KB/s
+Total Packets: 51202
+ACKs Sent: 202210
+MD5 Match: true
+==================================================
+
+==================================================
+Transmission 3/10 at 2025-06-11T20:45:25+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 8.74 seconds
+Throughput: 5858.68 KB/s
+Total Packets: 51202
+ACKs Sent: 192916
+MD5 Match: true
+==================================================
+
+==================================================
+Transmission 4/10 at 2025-06-11T20:45:30+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 5.06 seconds
+Throughput: 10114.59 KB/s
+Total Packets: 51202
+ACKs Sent: 102402
+MD5 Match: true
+==================================================
+
+==================================================
+Transmission 5/10 at 2025-06-11T20:45:39+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 8.89 seconds
+Throughput: 5757.28 KB/s
+Total Packets: 51202
+ACKs Sent: 199734
+MD5 Match: true
+==================================================
+
+==================================================
+Transmission 6/10 at 2025-06-11T20:45:48+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 8.79 seconds
+Throughput: 5822.07 KB/s
+Total Packets: 51202
+ACKs Sent: 201078
+MD5 Match: true
+==================================================

@@ -1,0 +1,324 @@
+
+==================================================
+Transmission at 2025-06-11T20:34:55+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.03 seconds
+Throughput: 12717.44 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 1/10 at 2025-06-11T20:38:47+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.98 seconds
+Throughput: 12850.02 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 2/10 at 2025-06-11T20:38:50+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.33 seconds
+Throughput: 15391.51 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 3/10 at 2025-06-11T20:38:54+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.63 seconds
+Throughput: 14110.24 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 4/10 at 2025-06-11T20:38:57+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.50 seconds
+Throughput: 14625.21 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 5/10 at 2025-06-11T20:39:01+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.64 seconds
+Throughput: 14051.03 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 6/10 at 2025-06-11T20:39:04+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.71 seconds
+Throughput: 13792.34 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 7/10 at 2025-06-11T20:39:08+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.60 seconds
+Throughput: 14237.78 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 8/10 at 2025-06-11T20:39:12+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.12 seconds
+Throughput: 12428.77 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 9/10 at 2025-06-11T20:39:15+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 3.05 seconds
+Throughput: 16814.19 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 10/10 at 2025-06-11T20:39:18+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.89 seconds
+Throughput: 17740.84 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 1/10 at 2025-06-11T20:41:20+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.95 seconds
+Throughput: 17339.36 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 2/10 at 2025-06-11T20:41:23+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.36 seconds
+Throughput: 21711.26 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 3/10 at 2025-06-11T20:41:25+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.12 seconds
+Throughput: 24152.84 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 4/10 at 2025-06-11T20:41:27+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.31 seconds
+Throughput: 22179.49 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 5/10 at 2025-06-11T20:41:30+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.51 seconds
+Throughput: 20433.62 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 6/10 at 2025-06-11T20:41:32+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.40 seconds
+Throughput: 21296.37 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 7/10 at 2025-06-11T20:41:34+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.39 seconds
+Throughput: 21464.13 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 8/10 at 2025-06-11T20:41:37+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.37 seconds
+Throughput: 21614.33 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 9/10 at 2025-06-11T20:41:39+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.61 seconds
+Throughput: 19638.38 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 10/10 at 2025-06-11T20:41:42+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 2.09 seconds
+Throughput: 24528.48 KB/s
+Total Packets: 25602
+ACKs Received: 25600
+Retries: 25600
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 1/10 at 2025-06-11T20:45:06+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 5.12 seconds
+Throughput: 10003.42 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 3/10 at 2025-06-11T20:45:15+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.27 seconds
+Throughput: 11987.23 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 5/10 at 2025-06-11T20:45:24+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.01 seconds
+Throughput: 12764.78 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 6/10 at 2025-06-11T20:45:30+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 5.17 seconds
+Throughput: 9893.73 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 8/10 at 2025-06-11T20:45:39+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.10 seconds
+Throughput: 12498.63 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
+
+==================================================
+Transmission 10/10 at 2025-06-11T20:45:48+02:00
+File: test_50mb.bin
+File Size: 51200.00 KB
+Duration: 4.00 seconds
+Throughput: 12808.17 KB/s
+Total Packets: 51202
+ACKs Received: 51200
+Retries: 51200
+Success Rate: 100.0%
+==================================================
