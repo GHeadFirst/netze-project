@@ -155,10 +155,7 @@ func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, 
 		head := create_header(id, sequence)
 
 		// Send ACK for every packet
-		ackPacket := make([]byte, 6)
-		binary.BigEndian.PutUint16(ackPacket[0:2], id)
-		binary.BigEndian.PutUint32(ackPacket[2:6], sequence)
-		_, err = conn.WriteToUDP(ackPacket, addr)
+		_, err = conn.WriteToUDP([]byte("ACK"), addr)
 		if err != nil {
 			log.Fatal("Error sending ACK:", err)
 		}

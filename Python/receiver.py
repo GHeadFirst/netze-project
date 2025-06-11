@@ -138,7 +138,7 @@ def receive_loop(udp_server_socket):
         print(f"Received packet from transmission_id: {transmission_id} with sequence_number: {sequence_number}")
         
         # Send ACK for the received packet
-        udp_server_socket.sendto(b'ACK', addr)
+        udp_server_socket.sendto(b'ACK', addr)  # Python transmitter expects simple 'ACK' string
         tx["acks_sent"] += 1
         total_acks_sent += 1
             

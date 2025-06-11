@@ -30,6 +30,7 @@ type TransmissionStats struct {
 func Transmitter(filename string) {
 	const numTransmissions = 10
 	const maxRetries = 3
+	const serverAddr = "0.0.0.0:4010" // Match Python receiver's address
 
 	// Create results directory if it doesn't exist
 	resultsDir := "results"
@@ -67,7 +68,7 @@ func Transmitter(filename string) {
 		defer file.Close()
 
 		// Create UDP connection
-		conn, err := net.Dial("udp", "localhost:4010")
+		conn, err := net.Dial("udp", serverAddr)
 		if err != nil {
 			log.Fatalf("Error creating UDP connection: %v", err)
 		}
@@ -136,7 +137,7 @@ func Transmitter(filename string) {
 				}
 
 				// Wait for ACK
-				ackBuffer := make([]byte, 6) // ACK is 6 bytes (2 for ID, 4 for sequence)
+				ackBuffer := make([]byte, 3) // ACK is 3 bytes ('ACK')
 				_, err = conn.Read(ackBuffer)
 				if err != nil {
 					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
@@ -149,13 +150,10 @@ func Transmitter(filename string) {
 					log.Fatalf("Error receiving ACK: %v", err)
 				}
 
-				// Parse ACK (2 bytes ID, 4 bytes sequence)
-				ackID := binary.BigEndian.Uint16(ackBuffer[0:2])
-				ackSeq := binary.BigEndian.Uint32(ackBuffer[2:6])
-
-				if ackID != sequenceID || ackSeq != sequenceNumber {
-					fmt.Printf("\nUnexpected ACK received (ID: %d, Seq: %d), retry %d/%d\n", 
-						ackID, ackSeq, retryCount+1, maxRetries)
+				// Check if ACK is valid
+				if string(ackBuffer) != "ACK" {
+					fmt.Printf("\nUnexpected ACK received: %s, retry %d/%d\n", 
+						string(ackBuffer), retryCount+1, maxRetries)
 					retryCount++
 					retries++
 					continue
