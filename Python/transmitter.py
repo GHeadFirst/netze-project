@@ -4,6 +4,8 @@ import math
 from pathlib import Path
 from hashlib import md5
 import time
+import sys
+import os
 
 
 # file_name = test_data.txt
@@ -81,24 +83,59 @@ class PacketBuilder():
 
 class Transmitter:
     transmission_id = 0  # Class variable to track transmission IDs
+    DEFAULT_TIMEOUT = 1.0  # Default timeout in seconds
 
-    # Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
-    # Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
-    def __init__(self, target_ip_address,target_port):
+    def __init__(self, target_ip_address, target_port):
         self.udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Get timeout from environment variable or use default
+        timeout = float(os.environ.get("UDP_TIMEOUT", self.DEFAULT_TIMEOUT))
+        self.udp_client_socket.settimeout(timeout)
+        self.target_address = (target_ip_address, target_port)
+        print(f"UDP socket created and bound (timeout: {timeout}s).")
 
-        self.target_address = (target_ip_address,target_port)
+    def send_packet_with_ack(self, packet):
+        """Send a packet and wait for ACK"""
+        max_retries = 3
+        retries = 0
         
-        print("UDP socket created and bound.")
+        while retries < max_retries:
+            try:
+                # Send the packet
+                packet_in_bytes = packet.serialization()
+                self.udp_client_socket.sendto(packet_in_bytes, self.target_address)
+                print(f"Sending packet tx_id={packet.transmission_id} seq={packet.sequence_number}")
+                
+                # Wait for ACK
+                while True:
+                    try:
+                        data, addr = self.udp_client_socket.recvfrom(1024)
+                        if data == b'ACK':
+                            print(f"Received ACK for packet {packet.sequence_number}")
+                            return True
+                    except socket.timeout:
+                        print(f"Timeout waiting for ACK for packet {packet.sequence_number}")
+                        break
+                
+                retries += 1
+                print(f"Retrying packet {packet.sequence_number} (attempt {retries}/{max_retries})")
+                
+            except Exception as e:
+                print(f"Error sending packet: {e}")
+                retries += 1
+        
+        print(f"Failed to send packet {packet.sequence_number} after {max_retries} attempts")
+        return False
 
-
-    def send_packets(self,packets:list):
+    def send_packets(self, packets: list):
+        """Send packets using Stop-and-Wait protocol"""
         for packet in packets:
-            packet_in_bytes = packet.serialization()
-            self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
-            print(f"Sending packet tx_id={packet.transmission_id} seq={packet.sequence_number} and {packet.__str__()}")
-            # time.sleep(0.01)   # pause 10 ms
+            if not self.send_packet_with_ack(packet):
+                print(f"Failed to send packet {packet.sequence_number}, aborting transmission")
+                self.close_socket()
+                return False
+        
         self.close_socket()
+        return True
 
     def close_socket(self) -> str:
         self.udp_client_socket.close()
@@ -109,9 +146,19 @@ def main():
     current_tx_id = Transmitter.transmission_id
     Transmitter.transmission_id += 1
     
-    builder = PacketBuilder("image.png", 1024, current_tx_id)
-    tx = Transmitter("127.0.0.1", 4010)
-    tx.send_packets(builder.get_all_packets())
+    # Get file name and target IP from command line or use defaults
+    file_name = sys.argv[1] if len(sys.argv) > 1 else "test_data.txt"
+    target_ip = sys.argv[2] if len(sys.argv) > 2 else "127.0.0.1"
+    
+    builder = PacketBuilder(file_name, 1024, current_tx_id)
+    tx = Transmitter(target_ip, 4010)
+    success = tx.send_packets(builder.get_all_packets())
+    
+    if not success:
+        print("Transmission failed")
+        sys.exit(1)
+    else:
+        print("Transmission completed successfully")
 
 if __name__ == "__main__":
     main()

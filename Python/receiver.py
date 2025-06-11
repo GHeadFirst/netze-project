@@ -10,7 +10,7 @@ local_ip = "0.0.0.0"
 local_port = 4010
 
 
-def handle_complete_transmission(transmission_id, tx):
+def handle_complete_transmission(transmission_id, tx, client_address):
     print(f"\nTransmission {transmission_id} complete. Saving file...")
     file_path = f"received-{tx['file_name']}"    
     try:
@@ -50,12 +50,12 @@ def receive_loop(udp_server_socket):
 
         if transmission_id not in transmissions:
             transmissions[transmission_id] = {
-                "packets" : {},
-                "file_name" : None,
+                "packets": {},
+                "file_name": None,
                 "sequence_numbers": set(),
                 "max_sequence_number": None
             }
-            print(f"\n New Transmission: {transmission_id}")
+            print(f"\nNew Transmission: {transmission_id}")
 
         tx = transmissions[transmission_id]
 
@@ -65,7 +65,6 @@ def receive_loop(udp_server_socket):
             tx["max_sequence_number"] = pkt.max_sequence_number
             print(f"First packet received. Expecting {pkt.max_sequence_number + 1} total packets")
         elif sequence_number == tx["max_sequence_number"] + 1:
-            # Last packet is at max_sequence_number + 1
             pkt = LastPacket.deserialization(data)
             print("Last packet received")
         else:
@@ -74,17 +73,19 @@ def receive_loop(udp_server_socket):
         tx["packets"][sequence_number] = pkt
         tx["sequence_numbers"].add(sequence_number)
         print(f"Received packet from transmission_id: {transmission_id} with sequence_number: {sequence_number}")
+        
+        # Send ACK for the received packet
+        udp_server_socket.sendto(b'ACK', addr)
             
         max_seq = tx["max_sequence_number"]
         if max_seq is not None:
-            # Check if we have all expected packets
             expected_packets = max_seq + 2  # +2 for first and last packets
             received_packets = len(tx["packets"])
             print(f"Received {received_packets} of {expected_packets} packets")
             
             if received_packets == expected_packets:
                 print("\nAll packets received, saving file...")
-                handle_complete_transmission(transmission_id, tx)
+                handle_complete_transmission(transmission_id, tx, addr)
                 del transmissions[transmission_id]
 
 
