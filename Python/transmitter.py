@@ -56,7 +56,8 @@ class PacketBuilder():
 
     def create_first_packet(self) -> FirstPacket:
         self.max_sequence_number = self.file.get_total_chunks(self.buffer_size)
-        self.first_packet = FirstPacket(transmission_id,self.sequence_number,self.file.get_total_chunks(self.buffer_size),self.file.file_name)
+        self.first_packet = FirstPacket(transmission_id,self.sequence_number,
+            self.file.get_total_chunks(self.buffer_size),self.file.file_name)
         self.sequence_number += 1
 
     def create_data_packet(self) -> DataPacket:
@@ -80,7 +81,9 @@ class PacketBuilder():
         self.create_data_packet()
         self.create_last_packet()
         return [self.first_packet] + self.data_packets + [self.last_packet]
+
 class Transmitter:
+    transmission_id = 0  # Class variable to track transmission IDs
 
     # Wichtige hinweis hier, unserer Receiver, ist eigentlich unsere UDP server, unserer UDP client ist unserer Transmitter
     # Transmmiter (UDP client) schickt an Receiver(UDP server) packeten, und der Server hört einfach über den Port hin
@@ -93,11 +96,14 @@ class Transmitter:
 
 
     def send_packets(self,packets:list):
+        # Set the transmission ID for all packets in this transfer
+        current_tx_id = Transmitter.transmission_id
         for packet in packets:
+            packet.transmission_id = current_tx_id
             packet_in_bytes = packet.serialization()
             self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
-            print(f"Sending packet seq={packet.sequence_number} and {packet.__str__()}")
-            # time.sleep(0.01)   # pause 10 ms
+            print(f"Sending packet tx_id={current_tx_id} seq={packet.sequence_number} and {packet.__str__()}")
+        Transmitter.transmission_id += 1  # Increment for next transfer
         self.close_socket()
 
     def close_socket(self) -> str:
