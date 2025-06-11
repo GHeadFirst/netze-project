@@ -36,6 +36,9 @@ last Packet {
 > In der ersten Version sollen **KEINE** Kontrollnachrichten von RX zu TX verwendet werden!  
 > Die Fehlerfreiheit soll nur mittels **MD5** sichergestellt werden.
 
+### Teil 2
+> Implementiere entweder Wait/Stop oder Window Slider für packet bestätigung
+
 ---
 
 **Präsentieren Sie die Implementierung TX/RX in zwei Programmiersprachen, und die Messergebnisse (je 10 zwischen den Kombinationen) im Hinblick auf Optimierung Durchsatz.**
