@@ -38,6 +38,7 @@ def handle_complete_transmission(transmission_id, tx, client_address):
 
 def receive_loop(udp_server_socket):
     transmissions = {}
+    total_acks_sent = 0
 
     while True:
         data, addr = udp_server_socket.recvfrom(buffer_size)
@@ -53,7 +54,8 @@ def receive_loop(udp_server_socket):
                 "packets": {},
                 "file_name": None,
                 "sequence_numbers": set(),
-                "max_sequence_number": None
+                "max_sequence_number": None,
+                "acks_sent": 0
             }
             print(f"\nNew Transmission: {transmission_id}")
 
@@ -75,7 +77,11 @@ def receive_loop(udp_server_socket):
         print(f"Received packet from transmission_id: {transmission_id} with sequence_number: {sequence_number}")
         
         # Send ACK for the received packet
+        print(f"Sending ACK to {addr[0]}:{addr[1]} for packet {sequence_number}")
         udp_server_socket.sendto(b'ACK', addr)
+        tx["acks_sent"] += 1
+        total_acks_sent += 1
+        print(f"ACK sent successfully for packet {sequence_number}")
             
         max_seq = tx["max_sequence_number"]
         if max_seq is not None:
@@ -85,8 +91,13 @@ def receive_loop(udp_server_socket):
             
             if received_packets == expected_packets:
                 print("\nAll packets received, saving file...")
+                print(f"\nTransmission Statistics:")
+                print(f"Total packets received: {received_packets}")
+                print(f"Total ACKs sent: {tx['acks_sent']}")
                 handle_complete_transmission(transmission_id, tx, addr)
                 del transmissions[transmission_id]
+
+    print(f"\nTotal ACKs sent across all transmissions: {total_acks_sent}")
 
 
 def main():

@@ -91,6 +91,8 @@ class Transmitter:
         timeout = float(os.environ.get("UDP_TIMEOUT", self.DEFAULT_TIMEOUT))
         self.udp_client_socket.settimeout(timeout)
         self.target_address = (target_ip_address, target_port)
+        self.acks_received = 0
+        self.retries = 0
         print(f"UDP socket created and bound (timeout: {timeout}s).")
 
     def send_packet_with_ack(self, packet):
@@ -102,21 +104,28 @@ class Transmitter:
             try:
                 # Send the packet
                 packet_in_bytes = packet.serialization()
+                print(f"Sending packet to {self.target_address[0]}:{self.target_address[1]}")
                 self.udp_client_socket.sendto(packet_in_bytes, self.target_address)
                 print(f"Sending packet tx_id={packet.transmission_id} seq={packet.sequence_number}")
                 
                 # Wait for ACK
                 while True:
                     try:
+                        print(f"Waiting for ACK for packet {packet.sequence_number}...")
                         data, addr = self.udp_client_socket.recvfrom(1024)
+                        print(f"Received data from {addr[0]}:{addr[1]}: {data}")
                         if data == b'ACK':
+                            self.acks_received += 1
                             print(f"Received ACK for packet {packet.sequence_number}")
                             return True
+                        else:
+                            print(f"Received unexpected data: {data}")
                     except socket.timeout:
                         print(f"Timeout waiting for ACK for packet {packet.sequence_number}")
                         break
                 
                 retries += 1
+                self.retries += 1
                 print(f"Retrying packet {packet.sequence_number} (attempt {retries}/{max_retries})")
                 
             except Exception as e:
@@ -128,11 +137,18 @@ class Transmitter:
 
     def send_packets(self, packets: list):
         """Send packets using Stop-and-Wait protocol"""
+        total_packets = len(packets)
         for packet in packets:
             if not self.send_packet_with_ack(packet):
                 print(f"Failed to send packet {packet.sequence_number}, aborting transmission")
                 self.close_socket()
                 return False
+        
+        print(f"\nTransmission Statistics:")
+        print(f"Total packets sent: {total_packets}")
+        print(f"Total ACKs received: {self.acks_received}")
+        print(f"Total retries needed: {self.retries}")
+        print(f"Success rate: {(self.acks_received/total_packets)*100:.1f}%")
         
         self.close_socket()
         return True
