@@ -16,15 +16,15 @@ import (
 )
 
 type TransmissionStats struct {
-	Timestamp     string  `json:"timestamp"`
-	File          string  `json:"file"`
-	FileSize      int64   `json:"file_size"`
-	Duration      float64 `json:"duration"`
-	Throughput    float64 `json:"throughput"`
-	TotalPackets  int     `json:"total_packets"`
-	AcksReceived  int     `json:"acks_received"`
-	Retries       int     `json:"retries"`
-	SuccessRate   float64 `json:"success_rate"`
+	Timestamp    string  `json:"timestamp"`
+	File         string  `json:"file"`
+	FileSize     int64   `json:"file_size"`
+	Duration     float64 `json:"duration"`
+	Throughput   float64 `json:"throughput"`
+	TotalPackets int     `json:"total_packets"`
+	AcksReceived int     `json:"acks_received"`
+	Retries      int     `json:"retries"`
+	SuccessRate  float64 `json:"success_rate"`
 }
 
 func Transmitter(filename string) {
@@ -78,12 +78,11 @@ func Transmitter(filename string) {
 		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 
 		// Generate random sequence ID
-		rand.Seed(time.Now().UnixNano())
 		sequenceID := uint16(rand.Intn(65536))
 		fmt.Printf("Starting transmission with sequence ID: %d\n", sequenceID)
 
 		// Calculate total number of packets
-		totalPackets := (fileSize + 1023) / 1024 // Round up division
+		totalPackets := (fileSize + 1023) / 1024 // Round up division with 1023 because Go rounds down normally
 		fmt.Printf("Total packets to send: %d\n", totalPackets)
 
 		// Send first packet
@@ -93,7 +92,7 @@ func Transmitter(filename string) {
 				Sequence_number: 0,
 			},
 			Max_sequence_number: uint32(totalPackets),
-			File_Name:          filename,
+			File_Name:           filename,
 		}
 		firstPacketBytes := BuildPacket(&firstPacket, [16]byte{})
 		_, err = conn.Write(firstPacketBytes)
@@ -141,7 +140,7 @@ func Transmitter(filename string) {
 				_, err = conn.Read(ackBuffer)
 				if err != nil {
 					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-						fmt.Printf("\nTimeout waiting for ACK for packet %d, retry %d/%d\n", 
+						fmt.Printf("\nTimeout waiting for ACK for packet %d, retry %d/%d\n",
 							sequenceNumber, retryCount+1, maxRetries)
 						retryCount++
 						retries++
@@ -152,7 +151,7 @@ func Transmitter(filename string) {
 
 				// Check if ACK is valid
 				if string(ackBuffer) != "ACK" {
-					fmt.Printf("\nUnexpected ACK received: %s, retry %d/%d\n", 
+					fmt.Printf("\nUnexpected ACK received: %s, retry %d/%d\n",
 						string(ackBuffer), retryCount+1, maxRetries)
 					retryCount++
 					retries++
@@ -174,7 +173,7 @@ func Transmitter(filename string) {
 			elapsed := time.Since(startTime)
 			speed := float64(bytesSent) / elapsed.Seconds() / 1024 / 1024 // MB/s
 
-			fmt.Printf("\rProgress: %.2f%% (%d/%d packets) - Speed: %.2f MB/s", 
+			fmt.Printf("\rProgress: %.2f%% (%d/%d packets) - Speed: %.2f MB/s",
 				progress, sequenceNumber, totalPackets, speed)
 
 			sequenceNumber++
@@ -206,15 +205,15 @@ func Transmitter(filename string) {
 
 			// Log statistics
 			stats := TransmissionStats{
-				Timestamp:     time.Now().Format(time.RFC3339),
-				File:          filename,
-				FileSize:      fileSize,
-				Duration:      totalTime.Seconds(),
-				Throughput:    float64(fileSize) / totalTime.Seconds(),
-				TotalPackets:  int(sequenceNumber + 1),
-				AcksReceived:  acksReceived,
-				Retries:       retries,
-				SuccessRate:   float64(acksReceived) / float64(sequenceNumber+1) * 100,
+				Timestamp:    time.Now().Format(time.RFC3339),
+				File:         filename,
+				FileSize:     fileSize,
+				Duration:     totalTime.Seconds(),
+				Throughput:   float64(fileSize) / totalTime.Seconds(),
+				TotalPackets: int(sequenceNumber + 1),
+				AcksReceived: acksReceived,
+				Retries:      retries,
+				SuccessRate:  float64(acksReceived) / float64(sequenceNumber+1) * 100,
 			}
 
 			// Write to log file
@@ -297,52 +296,6 @@ func BuildPacket(x udp_packets.Packet, md5_byte [16]byte) []byte {
 	}
 
 	return packet
-}
-
-func storePacketsIntoArray(filename string, dataSize int, md5_byte [16]byte) ([]udp_packets.Packet, uint32) {
-	var (
-		id          uint16 = uint16(rand.Intn(65536)) // random 16 bit integer
-		sequence    uint32 = 0
-		packet_list []udp_packets.Packet
-	)
-
-	//open
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatal("Error: ", err)
-	}
-
-	// store first packet
-	firsthead := create_header(id, sequence)
-	first := create_first_packet(firsthead, 0, filename) // zero at first because the max is not known yet --> fixup needed
-	packet_list = append(packet_list, &first)
-
-	// storing all data_packets into an array called packet_list
-	for {
-		sequence++
-		buf := make([]byte, dataSize)
-		// read
-		count, err := file.Read(buf)
-		if err != nil && err != io.EOF {
-			log.Fatal("Error: ", err)
-		}
-		// if nothing was read, break
-		if count == 0 {
-			break
-		}
-
-		// everytime a new header with a new sequencenumber but same id
-		head := create_header(id, sequence)
-		data_packet := create_data_packet(head, buf[:count])
-		packet_list = append(packet_list, &data_packet)
-	}
-
-	// store last packet
-	lasthead := create_header(id, sequence)
-	last := create_last_packet(lasthead, md5_byte)
-	packet_list = append(packet_list, &last)
-
-	return packet_list, sequence
 }
 
 func create_header(id uint16, sequence uint32) udp_packets.Header {
