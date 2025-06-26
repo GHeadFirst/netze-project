@@ -97,7 +97,7 @@ class Transmitter:
             packet_in_bytes = packet.serialization()
             self.udp_client_socket.sendto(packet_in_bytes,self.target_address)
             print(f"Sending packet seq={packet.sequence_number} and {packet.__str__()}")
-            # time.sleep(0.01)   # pause 10 ms
+            time.sleep(0.01)   # pause 10 ms
         self.close_socket()
 
     def close_socket(self) -> str:

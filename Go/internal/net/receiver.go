@@ -7,112 +7,132 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/GHeadFirst/netze-project/Go/internal/udp_packets"
 )
 
+// Receiver listens for UDP packets, reconstructs the file, verifies MD5, and reports duration & throughput
 func Receiver() {
 	var (
 		port string = "4010"
 
-		file_name    string
-		max_sequence uint32
-		md5_old      []byte
-		packet_list  = make(map[uint32]udp_packets.Packet) // map because received packets could be unsorted
+		fileName    string
+		maxSequence uint32
+		md5Old      []byte
+		packetList  = make(map[uint32]udp_packets.Packet)
 	)
 
 	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 	if err != nil {
-		log.Fatal("Error: ", err)
+		log.Fatal("Error resolving address: ", err)
 	}
+
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		log.Fatal("Receiver Error: ", err)
 	}
 	defer conn.Close()
+
 	fmt.Println("UDP server is listening...")
 
-	storePackets(packet_list, &file_name, &max_sequence, &md5_old, conn)
+	// start timing
+	start := time.Now()
 
-	// new name just to see a file, normally it wouldn't be needed
-	new_file_name := "received_" + packet_list[0].(*udp_packets.First_packet).File_Name
-	fmt.Printf("\nReceived file: %s\n", new_file_name)
+	// receive packets
+	storePackets(packetList, &fileName, &maxSequence, &md5Old, conn)
 
-	mergePackets(new_file_name, max_sequence, packet_list)
+	// reconstruct filename
+	newFileName := "received_" + packetList[0].(*udp_packets.First_packet).File_Name
+	fmt.Printf("\nReceived file: %s\n", newFileName)
 
-	// comparing md5
-	if compareMD5(new_file_name, md5_old) {
-		println("Same MD5!")
+	// write out data packets
+	mergePackets(newFileName, maxSequence, packetList)
+
+	// compare MD5 using md5.go's function
+	if compareMD5(newFileName, md5Old) {
+		fmt.Println("Same MD5!")
 	} else {
-		println("Different MD5!")
+		fmt.Println("Different MD5!")
 	}
+
+	// stop timing and report
+	elapsed := time.Since(start).Seconds()
+	info, err := os.Stat(newFileName)
+	if err != nil {
+		log.Printf("Could not stat file: %v", err)
+		return
+	}
+
+	size := info.Size() // bytes
+	kb := float64(size) / elapsed / 1024
+	mbit := float64(size)*8.0 / elapsed / 1e6
+
+	fmt.Printf("\n→ Duration: %.3f s\n", elapsed)
+	fmt.Printf("→ Throughput: %.1f KB/s (%.2f Mbit/s)\n", kb, mbit)
 }
 
-func storePackets(packet_list map[uint32]udp_packets.Packet, file_name *string, max_sequence *uint32, md5_old *[]byte, conn *net.UDPConn) {
-	var break_loop bool
+func storePackets(packetList map[uint32]udp_packets.Packet, fileName *string, maxSequence *uint32, md5Old *[]byte, conn *net.UDPConn) {
+	var breakLoop bool
 	buf := make([]byte, 5000)
 	for {
 		n, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			log.Fatal("Error: ", err)
+			log.Fatal("Error reading packet: ", err)
 		}
 
-		// receive header
+		// parse header
 		id := binary.BigEndian.Uint16(buf[0:2])
 		sequence := binary.BigEndian.Uint32(buf[2:6])
 		head := create_header(id, sequence)
 
-		fmt.Println("---------------------------")
-		fmt.Println("Sequence_ID: ", id)
-		fmt.Println("Sequence_number: ", sequence)
-
 		switch sequence {
 		case 0:
-			*max_sequence = binary.BigEndian.Uint32(buf[6:10])
-			// replace all zero bytes (\x00)
+			*maxSequence = binary.BigEndian.Uint32(buf[6:10])
+
 			raw := buf[10:n]
 			clean := bytes.ReplaceAll(raw, []byte{0}, []byte{})
-			*file_name = string(clean)
+			*fileName = string(clean)
 
-			first := create_first_packet(head, *max_sequence, *file_name)
-			packet_list[sequence] = &first
+			first := create_first_packet(head, *maxSequence, *fileName)
+			packetList[sequence] = &first
 			fmt.Println("First packet received!")
-		case *max_sequence + 1:
-			*md5_old = buf[6:n]
 
-			last := create_last_packet(head, [16]byte(*md5_old))
-			packet_list[sequence+1] = &last
+		case *maxSequence + 1:
+			*md5Old = buf[6:n]
+
+			last := create_last_packet(head, [16]byte(*md5Old))
+			packetList[sequence+1] = &last
 			fmt.Println("Last packet received!")
-			break_loop = true
+			breakLoop = true
+
 		default:
 			payload := make([]byte, n-6)
 			copy(payload, buf[6:n])
 
 			data := create_data_packet(head, payload)
-			packet_list[sequence] = &data
+			packetList[sequence] = &data
 			fmt.Println("Data packet received!")
 		}
-		if break_loop {
+
+		if breakLoop {
 			break
 		}
 	}
 	fmt.Println("---------------------------")
 }
 
-func mergePackets(new_file_name string, max_sequence uint32, packet_list map[uint32]udp_packets.Packet) {
-	// create and fill the file with all the received data packets
-	file, err := os.Create(new_file_name)
+func mergePackets(newFileName string, maxSequence uint32, packetList map[uint32]udp_packets.Packet) {
+	file, err := os.Create(newFileName)
 	if err != nil {
-		log.Fatal("Error: ", err)
+		log.Fatal("Error creating file: ", err)
 	}
 	defer file.Close()
 
-	n := uint32(1)
-	for n <= max_sequence {
-		_, err = file.Write(packet_list[n].(*udp_packets.Data_packet).Data)
+	for n := uint32(1); n <= maxSequence; n++ {
+		_, err = file.Write(packetList[n].(*udp_packets.Data_packet).Data)
 		if err != nil {
-			log.Fatal("Error: ", err)
+			log.Fatal("Error writing packet: ", err)
 		}
-		n++
 	}
 }
